@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Wall - Jeopardy Style</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="brand-badge">
+        <img src="ISG%20Logo.png" alt="ISG Logo">
+        <span>ISG Quiz Wall</span>
+    </div>
+    <div id="app" class="app-container">
+        <!-- Start Menu Screen -->
+        <div id="startMenu" class="screen">
+            <div class="start-menu-content">
+                <h1>Quiz Wall</h1>
+                <p class="subtitle">Jeopardy-Stil Quiz Spiel</p>
+                <p id="quizInfo" class="quiz-info"></p>
+                <div class="button-group">
+                    <button class="btn btn-primary btn-large" onclick="app.continueGame()">
+                        ▶️ Spielen
+                    </button>
+                    <button class="btn btn-primary btn-large" onclick="app.showNewGameSetup()">
+                        🎮 Neues Spiel starten
+                    </button>
+                    <button class="btn btn-secondary btn-large" onclick="app.showEditor()">
+                        ✏️ Editor öffnen
+                    </button>
+                    
+                    <hr style="width: 100%; border: none; border-top: 1px solid var(--border-color); margin: 1rem 0;">
+                    
+                    <div class="menu-section">
+                        <h4>Quiz verwalten</h4>
+                        <button class="btn btn-small" onclick="app.downloadQuiz()">
+                            ⬇️ Quiz speichern
+                        </button>
+                        <button class="btn btn-small" onclick="document.getElementById('quizFileInput').click()">
+                            📂 Quiz laden
+                        </button>
+                        <button class="btn btn-small" onclick="app.loadDefaultQuiz()">
+                            🎯 Default-Demo-Quiz laden
+                        </button>
+                        <button class="btn btn-small" onclick="app.resetQuiz()">
+                            🆕 Neues Quiz
+                        </button>
+                    </div>
+                    
+                    <div class="menu-section">
+                        <h4>Spielstand verwalten</h4>
+                        <button class="btn btn-small" onclick="app.saveCurrentGame()">
+                            💾 Spielstand speichern
+                        </button>
+                        <button class="btn btn-small" onclick="document.getElementById('gameFileInput').click()">
+                            📂 Spielstand laden
+                        </button>
+                        <button class="btn btn-small" onclick="app.resetTeams()">
+                            🔄 Teams zurücksetzen
+                        </button>
+                    </div>
+                    
+                    <button class="btn btn-tertiary btn-large" onclick="app.showSettings()">
+                        ⚙️ Einstellungen
+                    </button>
+                </div>
+                <input type="file" id="quizFileInput" accept=".quiz.json" style="display: none;" onchange="app.handleQuizUpload(event)">
+                <input type="file" id="gameFileInput" accept=".game.json" style="display: none;" onchange="app.handleGameUpload(event)">
+            </div>
+        </div>
+
+        <!-- New Game Setup Screen -->
+        <div id="gameSetup" class="screen hidden">
+            <div class="setup-content">
+                <h2>Neues Spiel einrichten</h2>
+                
+                <div class="setup-section">
+                    <label for="teamCount">Anzahl Teams (2-4):</label>
+                    <input type="number" id="teamCount" min="2" max="4" value="2" onchange="app.renderGameSetup()">
+                </div>
+
+                <div class="setup-section">
+                    <label for="categoryCount">Anzahl Kategorien (3-6):</label>
+                    <input type="number" id="categoryCount" min="3" max="6" value="3" onchange="app.renderGameSetup()">
+                </div>
+
+                <div class="setup-section">
+                    <label>Team-Namen:</label>
+                    <div id="teamNamesContainer" class="team-names-container"></div>
+                </div>
+
+                <div class="setup-section">
+                    <label>Kategorien:</label>
+                    <div id="categoriesContainer" class="categories-container"></div>
+                </div>
+
+                <div class="setup-section">
+                    <label for="pointsInput">Punkte-Schema (kommasepariert):</label>
+                    <input type="text" id="pointsInput" placeholder="z.B. 100,200,300,400,500" value="100,200,300,400,500">
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="app.startNewGame()">Zum Editor</button>
+                    <button class="btn btn-secondary" onclick="app.goToStartMenu()">Abbrechen</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Editor Screen -->
+        <div id="editor" class="screen hidden">
+            <div class="editor-content">
+                <h2>Quiz Editor</h2>
+                
+                <div class="editor-main">
+                    <div class="editor-sidebar">
+                        <div class="quiz-title-input">
+                            <label for="quizTitle">Quiz-Titel:</label>
+                            <input type="text" id="quizTitle" placeholder="Gib einen Titel für das Quiz ein" maxlength="50">
+                        </div>
+                        <h3>Kategorien</h3>
+                        <div id="categoryList" class="category-list"></div>
+                        <button class="btn btn-small btn-primary" onclick="app.editor.addCategory()">+ Kategorie</button>
+                        
+                        <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border-color);">
+                        
+                        <h3>Teams</h3>
+                        <div id="teamsList" class="team-list"></div>
+                        <button class="btn btn-small btn-tertiary" onclick="app.editor.addTeam()">+ Team</button>
+                    </div>
+
+                    <div class="editor-questions">
+                        <h3 id="selectedCategoryTitle">Wähle eine Kategorie</h3>
+                        <div id="questionsList" class="questions-list"></div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="app.editor.saveAndPlay()">Spielen</button>
+                    <button class="btn btn-secondary" onclick="app.downloadQuiz()">⬇️ Quiz speichern</button>
+                    <button class="btn btn-secondary" onclick="app.goToStartMenu()">🏠 Hauptmenü</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quiz Wall Screen (Main Board) -->
+        <div id="quizWall" class="screen hidden">
+            <div class="quiz-wall-container">
+                <div class="quiz-header">
+                    <h2 id="quizTitleDisplay">Quiz Wall</h2>
+                    <div class="ranking-link">
+                        <button class="btn btn-small btn-tertiary" onclick="app.saveCurrentGame()">💾 Spielstand speichern</button>
+                        <button class="btn btn-small" onclick="app.goToStartMenu()">🏠 Hauptmenü</button>
+                        <button class="btn btn-small btn-danger" onclick="app.resetGame()">🔄 Spielstand zurücksetzen</button>
+                    </div>
+                </div>
+                
+                <div class="quiz-main-content">
+                    <div class="quiz-board" id="quizBoard"></div>
+                    <div class="quiz-sidebar" id="quizSidebar">
+                        <div class="ranking-container">
+                            <h3>Ranking</h3>
+                            <div id="sidebarRankingList" class="ranking-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Question Screen -->
+        <div id="questionScreen" class="screen hidden">
+            <div class="question-modal">
+                <div class="modal-content">
+                    <h2 id="questionTitle"></h2>
+                    <div id="questionText" class="question-text"></div>
+                    <button class="btn btn-primary btn-large" onclick="app.gameplay.showAnswer()">
+                        Antwort anzeigen
+                    </button>
+                    <button class="btn btn-secondary btn-small" onclick="app.goToQuizWall()">Abbrechen</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Answer Screen -->
+        <div id="answerScreen" class="screen hidden">
+            <div class="question-modal">
+                <div class="modal-content">
+                    <h2 id="answerTitle">Antwort</h2>
+                    <div id="answerText" class="answer-text"></div>
+                    
+                    <div class="team-selection">
+                        <p>Welche Teams haben richtig geantwortet?</p>
+                        <div id="teamButtons" class="team-buttons"></div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="app.gameplay.confirmAndContinue()">
+                            Weiter ➜
+                        </button>
+                        <button class="btn btn-secondary" onclick="app.goToQuizWall()">Abbrechen</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ranking Screen -->
+        <div id="rankingScreen" class="screen hidden">
+            <div class="ranking-container">
+                <h2>Ranking</h2>
+                <div id="rankingList" class="ranking-list"></div>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="app.goToQuizWall()">Zurück zur Quizwand</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Screen -->
+        <div id="settings" class="screen hidden">
+            <div class="settings-content">
+                <h2>Einstellungen</h2>
+                
+                <div class="settings-section">
+                    <h3>Farbe anpassen</h3>
+                    <div class="color-settings">
+                        <div class="color-control">
+                            <label for="primaryColor">Primärfarbe:</label>
+                            <input type="color" id="primaryColor" value="#E25D03">
+                        </div>
+                        <div class="color-control">
+                            <label for="backgroundColor">Hintergrundfarbe:</label>
+                            <input type="color" id="backgroundColor" value="#FFFFFF">
+                        </div>
+                        <div class="color-control">
+                            <label for="textColor">Textfarbe:</label>
+                            <input type="color" id="textColor" value="#222222">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary btn-small" onclick="app.applyColorSettings()">Farben speichern</button>
+                    <button class="btn btn-secondary btn-small" onclick="app.resetColorSettings()">Zurücksetzen</button>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="app.goToStartMenu()">Zurück</button>
+                </div>
+            </div>
+        </div>
+    </div>
+<script src="default-quiz-data.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
