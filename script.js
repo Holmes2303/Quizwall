@@ -1,7 +1,7 @@
 const app = {
     /**
      * Speichert den aktuellen Spielstand als JSON-Datei.
-     * Fragt nach Dateinamen (Default: quizwall-YYYY-MM-DD_HH-MM-SS.json)
+     * Fragt nach Dateinamen (Default-Basisname) und erzwingt .game.json
      */
     saveCurrentGame() {
         if (!this.state.game) {
@@ -11,10 +11,16 @@ const app = {
         // Default-Filename erzeugen
         const now = new Date();
         const pad = n => n.toString().padStart(2, '0');
-        const defName = `quizwall-${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}.json`;
-        let filename = prompt('Dateiname für den Spielstand:', defName);
-        if (!filename) return;
-        if (!filename.endsWith('.json')) filename += '.json';
+        const defaultBase = `quizwall-${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+        const input = prompt('Dateiname fuer den Spielstand (ohne Endung):', defaultBase);
+        if (input === null) return;
+
+        const baseName = (input || defaultBase)
+            .trim()
+            .replace(/\.(game\.)?json$/i, '')
+            .replace(/\.quiz$/i, '') || defaultBase;
+
+        const filename = `${baseName}.game.json`;
         const data = {
             game: {
                 ...this.state.game,
@@ -236,6 +242,8 @@ const app = {
         currentScreenId: 'startMenu',
         quizTitle: 'Quiz Wall',
         game: null, // Aktives Spiel mit Teams und Fortschritt
+        selectedCategoryIndex: null,
+        quickTeamNames: [],
         editor: {
             categories: (typeof defaultQuizData !== 'undefined') ? defaultQuizData.categories : [],
             teams: []
@@ -249,8 +257,37 @@ const app = {
         console.log("Quiz Wall wird gestartet...");
         this.loadColorSettings();
         this.loadGameState();
+        this.bindStaticUiHandlers();
         this.showScreen('startMenu');
         this.updateQuizInfo();
+    },
+
+    bindStaticUiHandlers() {
+        const resetBtn = document.getElementById('resetGameButton');
+        if (resetBtn) {
+            // Inline-onclick bleibt als Fallback bestehen; Listener stellt robuste Ausfuehrung sicher.
+            resetBtn.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                this.resetGame();
+            });
+        }
+
+        const teamCountQuick = document.getElementById('teamCountQuick');
+        if (teamCountQuick) {
+            teamCountQuick.addEventListener('change', () => this.renderTeamSetup());
+            teamCountQuick.addEventListener('input', () => this.renderTeamSetup());
+        }
+
+        const startQuickGame = document.getElementById('startQuickGame');
+        if (startQuickGame) {
+            startQuickGame.addEventListener('click', () => this.startGameFromTeamSetup());
+        }
+
+        const cancelQuickGame = document.getElementById('cancelQuickGame');
+        if (cancelQuickGame) {
+            cancelQuickGame.addEventListener('click', () => this.goToStartMenu());
+        }
     },
 
     // ============ SCREEN MANAGEMENT ============
@@ -266,56 +303,227 @@ const app = {
         this.updateQuizInfo();
     },
 
+    hasLoadedQuiz() {
+        return Array.isArray(this.state.editor.categories) && this.state.editor.categories.length > 0;
+    },
+
+    hasActiveGame() {
+        return !!(this.state.game && Array.isArray(this.state.game.teams) && this.state.game.teams.length > 0);
+    },
+
+    updateMainMenuButtons() {
+        const continueBtn = document.getElementById('continueGameBtn');
+        const newGameBtn = document.getElementById('newGameBtn');
+        const gameReady = this.hasActiveGame();
+        const quizReady = this.hasLoadedQuiz();
+
+        if (continueBtn) {
+            continueBtn.disabled = !gameReady;
+            continueBtn.title = gameReady ? '' : 'Erst einen Spielstand laden oder starten';
+        }
+
+        if (newGameBtn) {
+            newGameBtn.disabled = !quizReady;
+            newGameBtn.title = quizReady ? '' : 'Erst ein Quiz laden';
+        }
+    },
+
     updateQuizInfo() {
         const info = document.getElementById('quizInfo');
+        this.updateMainMenuButtons();
         if (!info) return;
-        if (!this.state.editor.categories || this.state.editor.categories.length === 0) {
+
+        if (!this.hasLoadedQuiz()) {
             info.textContent = 'ℹ️ Kein Quiz geladen';
             return;
         }
-        if (!this.state.game) {
-            info.textContent = 'ℹ️ Kein Spielstand geladen';
+
+        if (!this.hasActiveGame()) {
+            info.innerHTML = `✅ <strong>${this.state.quizTitle}</strong> geladen (${this.state.editor.categories.length} Kategorien) · ℹ️ Kein Spielstand geladen`;
             return;
         }
-        info.innerHTML = `✅ <strong>${this.state.quizTitle}</strong> geladen (${this.state.editor.categories.length} Kategorien)`;
+
+        info.innerHTML = `✅ <strong>${this.state.quizTitle}</strong> geladen (${this.state.editor.categories.length} Kategorien) · ✅ Spielstand bereit`;
     },
 
     // ============ GAMEPLAY & NAVIGATION ============
     continueGame() {
-        if (!this.state.game) {
-            this.showScreen('teamSetup');
-            this.renderTeamSetup();
+        if (!this.hasActiveGame()) {
             return;
         }
+
         this.showScreen('quizWall');
         this.renderQuizBoard();
         this.updateRanking();
     },
 
     showNewGameSetup() {
-        this.showScreen('gameSetup');
-        this.renderGameSetup();
+        if (!this.hasLoadedQuiz()) {
+            return;
+        }
+
+        if (this.hasActiveGame()) {
+            this.showStartNewGameConfirmation(() => this.showTeamSetup());
+            return;
+        }
+
+        this.showTeamSetup();
     },
 
-    renderGameSetup() {
-        const container = document.getElementById('teamNamesContainer');
-        const count = parseInt(document.getElementById('teamCount').value);
-        container.innerHTML = '';
-        for (let i = 0; i < count; i++) {
+    showStartNewGameConfirmation(onConfirm) {
+        const modal = this.createModal('Neues Spiel starten');
+        const text = document.createElement('p');
+        text.textContent = 'Dies loescht den aktuellen Spielstand, okay?';
+        text.style.margin = '1rem 0 1.5rem 0';
+        modal.content.appendChild(text);
+
+        const actions = document.createElement('div');
+        actions.className = 'button-group';
+
+        const confirmBtn = document.createElement('button');
+        confirmBtn.className = 'btn btn-danger';
+        confirmBtn.textContent = 'Ja';
+        confirmBtn.onclick = () => {
+            modal.close();
+            if (typeof onConfirm === 'function') onConfirm();
+        };
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'btn btn-secondary';
+        cancelBtn.textContent = 'Abbrechen';
+        cancelBtn.onclick = () => modal.close();
+
+        actions.appendChild(confirmBtn);
+        actions.appendChild(cancelBtn);
+        modal.content.appendChild(actions);
+    },
+
+    showTeamSetup() {
+        this.showScreen('teamSetup');
+        this.renderTeamSetup();
+    },
+
+    renderTeamSetup() {
+        const teamCountInput = document.getElementById('teamCountQuick');
+        const teamNamesContainer = document.getElementById('teamNamesQuick');
+        if (!teamCountInput || !teamNamesContainer) return;
+
+        const teamCount = Math.max(2, Math.min(4, parseInt(teamCountInput.value, 10) || 2));
+        teamCountInput.value = String(teamCount);
+
+        const names = Array.isArray(this.state.quickTeamNames) ? [...this.state.quickTeamNames] : [];
+        names.length = teamCount;
+        for (let i = 0; i < teamCount; i++) {
+            if (!names[i]) names[i] = `Team ${i + 1}`;
+        }
+        this.state.quickTeamNames = names;
+
+        teamNamesContainer.innerHTML = '';
+        for (let i = 0; i < teamCount; i++) {
             const input = document.createElement('input');
             input.type = 'text';
-            input.id = `team-${i}`;
-            input.placeholder = `Team ${i + 1}`;
             input.className = 'team-name-input';
-            container.appendChild(input);
+            input.placeholder = `Team ${i + 1}`;
+            input.value = names[i];
+            input.addEventListener('input', (event) => {
+                this.state.quickTeamNames[i] = event.target.value;
+            });
+            teamNamesContainer.appendChild(input);
         }
     },
 
+    startGameFromTeamSetup() {
+        if (!this.hasLoadedQuiz()) {
+            alert('Bitte zuerst ein Quiz laden.');
+            this.goToStartMenu();
+            return;
+        }
+
+        const teamCountInput = document.getElementById('teamCountQuick');
+        const teamCount = Math.max(2, Math.min(4, parseInt(teamCountInput?.value, 10) || 2));
+        const teams = [];
+        for (let i = 0; i < teamCount; i++) {
+            const name = (this.state.quickTeamNames?.[i] || '').trim() || `Team ${i + 1}`;
+            teams.push({ id: i, name, score: 0 });
+        }
+
+        this.state.editor.teams = teams.map(team => ({ name: team.name }));
+        this.state.game = { teams, playedQuestions: [] };
+        this.state.playedQuestions = new Set();
+        this.state.currentQuestion = null;
+        this.saveGameState();
+
+        this.showScreen('quizWall');
+        this.renderQuizBoard();
+        this.updateRanking();
+    },
+
+    renderGameSetup() {
+        const categoryCountInput = document.getElementById('categoryCount');
+        const pointsInput = document.getElementById('pointsInput');
+        if (!categoryCountInput || !pointsInput) return;
+
+        const categoryCount = Math.max(2, Math.min(6, parseInt(categoryCountInput.value, 10) || 4));
+        categoryCountInput.value = String(categoryCount);
+
+        if (!pointsInput.value.trim()) {
+            pointsInput.value = '100,200,300,400,500';
+        }
+    },
+
+    parsePointsSchema(rawInput) {
+        return (rawInput || '')
+            .split(',')
+            .map(value => parseInt(value.trim(), 10))
+            .filter(value => Number.isInteger(value) && value > 0);
+    },
+
+    startNewGame() {
+        const categoryCount = Math.max(2, Math.min(6, parseInt(document.getElementById('categoryCount').value, 10) || 4));
+        const pointsSchema = this.parsePointsSchema(document.getElementById('pointsInput').value);
+
+        if (pointsSchema.length === 0) {
+            alert('Bitte ein gueltiges Punkte-Schema eingeben, z. B. 100,200,300,400,500.');
+            return;
+        }
+
+        const categories = [];
+        for (let cIdx = 0; cIdx < categoryCount; cIdx++) {
+            const questions = pointsSchema.map((points, qIdx) => ({
+                id: `q-${cIdx}-${qIdx}`,
+                points,
+                question: '',
+                answer: ''
+            }));
+            categories.push({
+                id: cIdx,
+                name: `Kategorie ${cIdx + 1}`,
+                questions
+            });
+        }
+
+        this.state.editor.categories = categories;
+        this.state.editor.teams = [];
+        this.state.game = null;
+        this.state.playedQuestions = new Set();
+        this.state.currentQuestion = null;
+        this.state.quickTeamNames = [];
+
+        this.saveGameState();
+
+        this.showScreen('editor');
+        this.renderEditor();
+        this.updateQuizInfo();
+    },
+
     createNewGame() {
-        const count = parseInt(document.getElementById('teamCount').value);
+        const teamCountInput = document.getElementById('teamCount');
+        if (!teamCountInput) return;
+
+        const count = parseInt(teamCountInput.value, 10) || 2;
         const teams = [];
         for (let i = 0; i < count; i++) {
-            const name = document.getElementById(`team-${i}`).value || `Team ${i + 1}`;
+            const name = document.getElementById(`team-${i}`)?.value || `Team ${i + 1}`;
             teams.push({ id: i, name: name, score: 0 });
         }
 
@@ -329,7 +537,87 @@ const app = {
         this.continueGame();
     },
 
+    goToQuizWall() {
+        this.showScreen('quizWall');
+        this.renderQuizBoard();
+        this.updateRanking();
+    },
+
     // ============ QUIZ VERWALTUNG ============
+    downloadQuiz() {
+        if (!this.state.editor.categories || this.state.editor.categories.length === 0) {
+            alert('Kein Quiz vorhanden.');
+            return;
+        }
+
+        const now = new Date();
+        const pad = n => n.toString().padStart(2, '0');
+        const defaultBase = `quiz-${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}`;
+        const input = prompt('Dateiname fuer das Quiz (ohne Endung):', defaultBase);
+        if (input === null) return;
+
+        const baseName = (input || defaultBase)
+            .trim()
+            .replace(/\.(quiz\.)?json$/i, '')
+            .replace(/\.game$/i, '') || defaultBase;
+
+        const filename = `${baseName}.quiz.json`;
+
+        const quizData = {
+            version: '1.0',
+            type: 'quiz',
+            timestamp: now.toISOString(),
+            quizTitle: this.state.quizTitle,
+            categories: this.state.editor.categories
+        };
+
+        const blob = new Blob([JSON.stringify(quizData, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+        }, 200);
+    },
+
+    handleQuizUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const parsed = JSON.parse(e.target.result);
+                const categories = Array.isArray(parsed.categories)
+                    ? parsed.categories
+                    : (parsed.game && Array.isArray(parsed.game.categories) ? parsed.game.categories : null);
+
+                if (!categories || categories.length === 0) {
+                    throw new Error('Keine gueltigen Kategorien gefunden.');
+                }
+
+                this.state.editor.categories = categories;
+                this.state.quizTitle = parsed.quizTitle || parsed.title || 'Quiz Wall';
+                this.state.game = null;
+                this.state.playedQuestions = new Set();
+                this.state.currentQuestion = null;
+                this.state.selectedCategoryIndex = null;
+
+                this.saveGameState();
+                this.updateQuizInfo();
+                this.showScreen('startMenu');
+                alert('Quiz erfolgreich geladen!');
+            } catch (err) {
+                alert('Fehler beim Laden des Quiz: ' + err.message);
+            }
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+    },
+
     loadDefaultQuiz() {
         if (typeof defaultQuizData !== 'undefined') {
             this.state.editor.categories = defaultQuizData.categories;
@@ -345,13 +633,106 @@ const app = {
     },
 
     resetQuiz() {
-        this.state.editor.categories = [];
-        this.state.quizTitle = 'Quiz Wall';
+        const hasQuiz = this.hasLoadedQuiz();
+        const hasGame = this.hasActiveGame();
+
+        if (!hasQuiz && !hasGame) {
+            this.beginNewQuizFlow();
+            return;
+        }
+
+        this.showResetQuizConfirmation({ hasQuiz, hasGame });
+    },
+
+    showResetQuizConfirmation({ hasQuiz, hasGame }) {
+        const modal = this.createModal('Neues Quiz');
+        const text = document.createElement('p');
+
+        if (hasQuiz && hasGame) {
+            text.textContent = 'Aktuelles Quiz und Spielstand gehen verloren, wenn du fortfaehrst.';
+        } else if (hasQuiz) {
+            text.textContent = 'Das aktuelle Quiz geht verloren, wenn du fortfaehrst.';
+        } else {
+            text.textContent = 'Der aktuelle Spielstand geht verloren, wenn du fortfaehrst.';
+        }
+
+        text.style.margin = '1rem 0 1.25rem 0';
+        modal.content.appendChild(text);
+
+        const actions = document.createElement('div');
+        actions.className = 'button-group';
+
+        const saveBothBtn = document.createElement('button');
+        saveBothBtn.className = 'btn btn-primary';
+        saveBothBtn.textContent = 'Spielstand und Quiz speichern';
+        saveBothBtn.onclick = () => {
+            if (hasQuiz) this.downloadQuiz();
+            if (hasGame) this.saveCurrentGame();
+            modal.close();
+            this.beginNewQuizFlow();
+        };
+
+        const saveQuizBtn = document.createElement('button');
+        saveQuizBtn.className = 'btn btn-secondary';
+        saveQuizBtn.textContent = 'Nur Quiz speichern';
+        saveQuizBtn.onclick = () => {
+            if (hasQuiz) this.downloadQuiz();
+            modal.close();
+            this.beginNewQuizFlow();
+        };
+
+        const proceedBtn = document.createElement('button');
+        proceedBtn.className = 'btn btn-danger';
+        proceedBtn.textContent = 'Editor trotzdem starten';
+        proceedBtn.onclick = () => {
+            modal.close();
+            this.beginNewQuizFlow();
+        };
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'btn btn-tertiary';
+        cancelBtn.textContent = 'Abbrechen';
+        cancelBtn.onclick = () => modal.close();
+
+        actions.appendChild(saveBothBtn);
+        actions.appendChild(saveQuizBtn);
+        actions.appendChild(proceedBtn);
+        actions.appendChild(cancelBtn);
+        modal.content.appendChild(actions);
+    },
+
+    beginNewQuizFlow() {
         this.state.game = null;
         this.state.playedQuestions = new Set();
+        this.state.currentQuestion = null;
+        this.state.quickTeamNames = [];
+        this.state.editor.teams = [];
+        this.state.editor.categories = [];
+        this.state.quizTitle = 'Quiz Wall';
+        this.saveGameState();
+
+        this.showScreen('gameSetup');
+        this.renderGameSetup();
+    },
+
+    resetTeams() {
+        if (!this.state.game) {
+            alert('Kein aktives Spiel vorhanden.');
+            return;
+        }
+
+        if (!confirm('Spiel zuruecksetzen? Teams und Spielstand gehen verloren, das Quiz bleibt erhalten.')) {
+            return;
+        }
+
+        this.state.game = null;
+        this.state.playedQuestions = new Set();
+        this.state.currentQuestion = null;
+        this.state.quickTeamNames = [];
         this.saveGameState();
         this.updateQuizInfo();
-        alert('Quiz wurde zurückgesetzt.');
+        this.showScreen('startMenu');
+        alert('Spiel wurde zurueckgesetzt.');
     },
 
     // ============ QUIZ BOARD ============
@@ -412,6 +793,14 @@ const app = {
 
 
     updateRanking() {
+        if (!this.hasActiveGame()) {
+            const list = document.getElementById('rankingList');
+            const sidebar = document.getElementById('sidebarRankingList');
+            if (list) list.innerHTML = '';
+            if (sidebar) sidebar.innerHTML = '';
+            return;
+        }
+
         // Haupt-Ranking (z.B. für Ranking-Screen)
         const list = document.getElementById('rankingList');
         if (list) {
@@ -440,69 +829,149 @@ const app = {
 
     // ============ EDITOR ============
     showEditor() {
-        // Teams aus aktuellem Spielstand übernehmen, falls vorhanden
-        if (this.state.game && Array.isArray(this.state.game.teams)) {
-            this.state.editor.teams = this.state.game.teams.map(t => ({ name: t.name }));
-        }
         this.showScreen('editor');
         this.renderEditor();
     },
 
     renderEditor() {
         // Quiz-Titel setzen
-        document.getElementById('quizTitle').value = this.state.quizTitle;
+        const titleInput = document.getElementById('quizTitle');
+        titleInput.value = this.state.quizTitle;
+        titleInput.oninput = (event) => {
+            this.state.quizTitle = event.target.value.trim() || 'Quiz Wall';
+        };
+
         // Kategorien anzeigen
         this.renderCategoryList();
-        // Teams anzeigen
-        this.renderTeamsList();
-        // Fragenbereich leeren
-        document.getElementById('selectedCategoryTitle').textContent = 'Wähle eine Kategorie';
-        document.getElementById('questionsList').innerHTML = '';
+
+        // Fragenbereich initialisieren
+        if (this.state.editor.categories.length > 0) {
+            this.selectCategory(0);
+        } else {
+            this.state.selectedCategoryIndex = null;
+            document.getElementById('selectedCategoryTitle').textContent = 'Wähle eine Kategorie';
+            document.getElementById('questionsList').innerHTML = '';
+        }
     },
 
     renderCategoryList() {
         const list = document.getElementById('categoryList');
         list.innerHTML = '';
+
         this.state.editor.categories.forEach((cat, idx) => {
             const div = document.createElement('div');
             div.className = 'category-item';
+            if (idx === this.state.selectedCategoryIndex) {
+                div.classList.add('active');
+            }
             div.textContent = cat.name;
             div.onclick = () => this.selectCategory(idx);
             list.appendChild(div);
         });
     },
 
-    renderTeamsList() {
-        const list = document.getElementById('teamsList');
-        list.innerHTML = '';
-        (this.state.editor.teams || []).forEach((team, idx) => {
-            const div = document.createElement('div');
-            div.className = 'team-item';
-            div.textContent = team.name || `Team ${idx+1}`;
-            // Eingabefeld für Teamnamen
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.value = team.name || `Team ${idx+1}`;
-            input.className = 'team-name-input';
-            input.oninput = (e) => {
-                this.state.editor.teams[idx].name = e.target.value;
-            };
-            div.appendChild(input);
-            list.appendChild(div);
-        });
-    },
-
     selectCategory(idx) {
+        this.state.selectedCategoryIndex = idx;
         const cat = this.state.editor.categories[idx];
-        document.getElementById('selectedCategoryTitle').textContent = cat.name;
+        if (!cat) return;
+
+        this.renderCategoryList();
+
+        const title = document.getElementById('selectedCategoryTitle');
+        title.innerHTML = '';
+        const titleInput = document.createElement('input');
+        titleInput.type = 'text';
+        titleInput.value = cat.name;
+        titleInput.className = 'team-name-input';
+        titleInput.oninput = (event) => {
+            cat.name = event.target.value || `Kategorie ${idx + 1}`;
+            this.renderCategoryList();
+        };
+        title.appendChild(titleInput);
+
         const qList = document.getElementById('questionsList');
         qList.innerHTML = '';
         cat.questions.forEach((q, qIdx) => {
-            const div = document.createElement('div');
-            div.className = 'question-item';
-            div.innerHTML = `<strong>${q.points}:</strong> ${q.question}`;
-            qList.appendChild(div);
+            qList.appendChild(this.createQuestionEditorItem(cat, q, qIdx));
         });
+    },
+
+    createQuestionEditorItem(category, question, questionIndex) {
+        const item = document.createElement('div');
+        item.className = 'question-item';
+
+        const header = document.createElement('div');
+        header.className = 'question-item-header';
+
+        const heading = document.createElement('h4');
+        const getHeaderText = () => {
+            const label = (question.question || '').trim();
+            return `${question.points} Punkte - ${label || 'Leere Frage'}`;
+        };
+        heading.textContent = getHeaderText();
+
+        const toggle = document.createElement('span');
+        toggle.className = 'question-item-toggle';
+        toggle.textContent = '▾';
+
+        header.appendChild(heading);
+        header.appendChild(toggle);
+
+        const content = document.createElement('div');
+        content.className = 'question-item-content';
+
+        const body = document.createElement('div');
+        body.className = 'question-item-body';
+
+        const pointsInput = document.createElement('input');
+        pointsInput.type = 'number';
+        pointsInput.min = '1';
+        pointsInput.value = question.points;
+        pointsInput.placeholder = 'Punkte';
+        pointsInput.oninput = (event) => {
+            const value = parseInt(event.target.value, 10);
+            if (Number.isInteger(value) && value > 0) {
+                question.points = value;
+                heading.textContent = getHeaderText();
+            }
+        };
+
+        const questionInput = document.createElement('textarea');
+        questionInput.placeholder = 'Frage eingeben';
+        questionInput.value = question.question || '';
+        questionInput.oninput = (event) => {
+            question.question = event.target.value;
+            heading.textContent = getHeaderText();
+        };
+
+        const answerInput = document.createElement('textarea');
+        answerInput.placeholder = 'Antwort eingeben';
+        answerInput.value = question.answer || '';
+        answerInput.oninput = (event) => {
+            question.answer = event.target.value;
+        };
+
+        body.appendChild(pointsInput);
+        body.appendChild(questionInput);
+        body.appendChild(answerInput);
+        content.appendChild(body);
+
+        header.onclick = () => {
+            const willOpen = !content.classList.contains('open');
+            content.classList.toggle('open', willOpen);
+            header.classList.toggle('open', willOpen);
+        };
+
+        item.appendChild(header);
+        item.appendChild(content);
+
+        // Erste Frage standardmäßig offen
+        if (questionIndex === 0) {
+            content.classList.add('open');
+            header.classList.add('open');
+        }
+
+        return item;
     },
 
     // ============ EINSTELLUNGEN & FARBEN ============
@@ -541,6 +1010,7 @@ const app = {
     saveGameState() {
         const data = {
             game: this.state.game,
+            categories: this.state.editor.categories,
             played: Array.from(this.state.playedQuestions),
             quizTitle: this.state.quizTitle
         };
@@ -564,13 +1034,17 @@ const app = {
             // Quiz-Titel übernehmen
             this.state.quizTitle = parsed.quizTitle || 'Quiz Wall';
             // Quizdaten (Kategorien/Fragen) übernehmen, falls vorhanden
-            if (parsed.game && parsed.game.categories) {
+            if (Array.isArray(parsed.categories)) {
+                this.state.editor.categories = parsed.categories;
+            } else if (parsed.game && parsed.game.categories) {
                 this.state.editor.categories = parsed.game.categories;
             }
             // Nach dem Laden alles neu rendern
             this.renderQuizBoard();
             this.updateRanking();
         }
+
+        this.updateQuizInfo();
     }
 };
 
@@ -579,33 +1053,43 @@ document.addEventListener('DOMContentLoaded', () => {
     app.init();
 });
 
-app.renderTeamSetup = function() {
-    this.state.editor.categories = [];
-    this.state.editor.teams = [];
-    const origRenderTeamSetup = app.renderTeamSetup;
-    origRenderTeamSetup.call(this);
-};
-
 app.editor = {
-    addTeam() {
-        if (!app.state.editor.teams) app.state.editor.teams = [];
-        app.state.editor.teams.push({ name: `Team ${app.state.editor.teams.length + 1}` });
-        app.renderTeamsList();
+    addCategory() {
+        const categoryIndex = app.state.editor.categories.length;
+        const templateCategory = app.state.editor.categories[0];
+        const templateQuestions = (templateCategory && Array.isArray(templateCategory.questions) && templateCategory.questions.length > 0)
+            ? templateCategory.questions
+            : [{ points: 100 }];
+
+        const questions = templateQuestions.map((templateQuestion, questionIndex) => ({
+            id: `q-${categoryIndex}-${questionIndex}`,
+            points: Number.isInteger(templateQuestion.points) && templateQuestion.points > 0 ? templateQuestion.points : 100,
+            question: '',
+            answer: ''
+        }));
+
+        app.state.editor.categories.push({
+            id: categoryIndex,
+            name: `Kategorie ${categoryIndex + 1}`,
+            questions
+        });
+
+        app.selectCategory(categoryIndex);
     },
+
     saveAndPlay() {
-        // Teams aus Editor übernehmen
-        if (!app.state.editor.teams || app.state.editor.teams.length < 2) {
-            alert('Bitte mindestens 2 Teams anlegen!');
+        if (!app.state.editor.categories || app.state.editor.categories.length < 2) {
+            alert('Bitte mindestens 2 Kategorien anlegen!');
             return;
         }
-        app.state.game = {
-            teams: app.state.editor.teams.map((t, i) => ({ id: i, name: t.name || `Team ${i+1}`, score: 0 })),
-            playedQuestions: []
-        };
+
+        // Team-Auswahl gehört zum Spiel-Flow, nicht in den Quiz-Editor.
+        app.state.game = null;
         app.state.playedQuestions = new Set();
-        app.showScreen('quizWall');
-        app.renderQuizBoard();
-        app.updateRanking();
+        app.state.currentQuestion = null;
+        app.saveGameState();
+
+        app.showTeamSetup();
     }
 };
 
@@ -613,12 +1097,12 @@ app.editor = {
 document.getElementById('quizTitleDisplay').textContent = app.state.quizTitle;
 
 // Fallback: Wenn keine Kategorien vorhanden sind, Demo-Quiz laden
-        if (!this.state.editor.categories || this.state.editor.categories.length === 0) {
-            if (typeof defaultQuizData !== 'undefined') {
-                this.state.editor.categories = defaultQuizData.categories;
-                this.state.quizTitle = 'Demo-Quiz';
-            }
-        }
+if (!app.state.editor.categories || app.state.editor.categories.length === 0) {
+    if (typeof defaultQuizData !== 'undefined') {
+        app.state.editor.categories = defaultQuizData.categories;
+        app.state.quizTitle = 'Demo-Quiz';
+    }
+}
 
 // ============ SPIELSTAND LADEN (FILE UPLOAD) ============
 app.handleGameUpload = function(event) {
@@ -628,6 +1112,16 @@ app.handleGameUpload = function(event) {
     reader.onload = (e) => {
         try {
             const data = JSON.parse(e.target.result);
+
+            const hasEmbeddedCategories =
+                (Array.isArray(data.categories) && data.categories.length > 0) ||
+                (data.game && Array.isArray(data.game.categories) && data.game.categories.length > 0);
+
+            if (!hasEmbeddedCategories) {
+                alert('Dieser Spielstand enthaelt keine eingebetteten Quizdaten und kann nicht geladen werden.');
+                return;
+            }
+
             // Spielstand in localStorage speichern und laden
             localStorage.setItem('quizwall_game', JSON.stringify(data));
             this.loadGameState();
@@ -641,49 +1135,59 @@ app.handleGameUpload = function(event) {
 
 // ============ SPIELSTAND ZURÜCKSETZEN ============
 app.resetGame = function() {
-    if (!confirm('Möchtest du den aktuellen Spielstand wirklich zurücksetzen?')) return;
-    this.state.game = null;
-    this.state.playedQuestions = new Set();
-    this.clearEditorState();
-    this.state.quizTitle = 'Quiz Wall';
-    localStorage.removeItem('quizwall_game');
-    this.saveGameState();
-    this.renderQuizBoard();
-    this.updateRanking();
-    this.goToStartMenu();
+    if (!this.state.game || !Array.isArray(this.state.game.teams)) {
+        alert('Kein aktiver Spielstand vorhanden.');
+        return;
+    }
+
+    this.showResetConfirmation();
 };
 
-// Editor-Daten komplett leeren
-app.clearEditorState = function() {
-    this.state.editor.categories = [];
-    this.state.editor.teams = [];
-};
+app.showResetConfirmation = function() {
+    const modal = this.createModal('Bist du sicher?');
 
-// ResetGame leert alles und speichert den Zustand
-app.resetGame = function() {
-    if (!confirm('Möchtest du den aktuellen Spielstand wirklich zurücksetzen?')) return;
-    this.state.game = null;
-    this.state.playedQuestions = new Set();
-    this.clearEditorState();
-    this.state.quizTitle = 'Quiz Wall';
-    localStorage.removeItem('quizwall_game');
-    this.saveGameState();
-    this.renderQuizBoard();
-    this.updateRanking();
-    this.goToStartMenu();
-};
+    const text = document.createElement('p');
+    text.textContent = 'Der komplette Spielstand wird zurueckgesetzt.';
+    text.style.margin = '1rem 0 1.5rem 0';
+    modal.content.appendChild(text);
 
-// Editor-Daten beim Start eines neuen Spiels immer leeren
-const origShowNewGameSetup = app.showNewGameSetup;
-app.showNewGameSetup = function() {
-    this.clearEditorState();
-    origShowNewGameSetup.call(this);
-};
+    const actions = document.createElement('div');
+    actions.className = 'button-group';
 
-const origRenderTeamSetup = app.renderTeamSetup;
-app.renderTeamSetup = function() {
-    this.clearEditorState();
-    origRenderTeamSetup.call(this);
+    const confirmBtn = document.createElement('button');
+    confirmBtn.className = 'btn btn-danger';
+    confirmBtn.textContent = 'Ja, zuruecksetzen';
+    confirmBtn.onclick = () => {
+        // Punktestand aller Teams zuruecksetzen
+        this.state.game.teams.forEach(team => {
+            team.score = 0;
+        });
+
+        // Alle Fragen wieder als unbeantwortet markieren
+        this.state.playedQuestions = new Set();
+        this.state.currentQuestion = null;
+        (this.state.editor.categories || []).forEach(category => {
+            (category.questions || []).forEach(question => {
+                if (Object.prototype.hasOwnProperty.call(question, 'answered')) {
+                    question.answered = false;
+                }
+            });
+        });
+
+        this.saveGameState();
+        this.renderQuizBoard();
+        this.updateRanking();
+        modal.close();
+    };
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'btn btn-secondary';
+    cancelBtn.textContent = 'Abbrechen';
+    cancelBtn.onclick = () => modal.close();
+
+    actions.appendChild(confirmBtn);
+    actions.appendChild(cancelBtn);
+    modal.content.appendChild(actions);
 };
 
 // App-Objekt global verfügbar machen

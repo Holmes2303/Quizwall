@@ -16,23 +16,29 @@
         <div id="startMenu" class="screen">
             <div class="start-menu-content">
                 <h1>Quiz Wall</h1>
-                <p class="subtitle">Jeopardy-Stil Quiz Spiel</p>
+                <p class="subtitle">Jeopardy-Stil Spiel auf Basis eines Quiz V 0.5</p>
                 <p id="quizInfo" class="quiz-info"></p>
+
+                <div class="main-menu-actions">
+                    <button id="newGameBtn" class="btn btn-primary btn-large" onclick="app.showNewGameSetup()">
+                        🎮 Neues Spiel
+                    </button>
+                    <button id="continueGameBtn" class="btn btn-primary btn-large" onclick="app.continueGame()">
+                        ▶️ Spiel fortsetzen
+                    </button>
+                </div>
+
                 <div class="button-group">
-                    <button class="btn btn-primary btn-large" onclick="app.continueGame()">
-                        ▶️ Spielen
-                    </button>
-                    <button class="btn btn-primary btn-large" onclick="app.showNewGameSetup()">
-                        🎮 Neues Spiel starten
-                    </button>
-                    <button class="btn btn-secondary btn-large" onclick="app.showEditor()">
-                        ✏️ Editor öffnen
-                    </button>
-                    
                     <hr style="width: 100%; border: none; border-top: 1px solid var(--border-color); margin: 1rem 0;">
                     
                     <div class="menu-section">
                         <h4>Quiz verwalten</h4>
+                        <button class="btn btn-small" onclick="app.resetQuiz()">
+                            🆕 Quiz neu erstellen
+                        </button>
+                        <button class="btn btn-small" onclick="app.showEditor()">
+                            ✏️ Editor öffnen
+                        </button>
                         <button class="btn btn-small" onclick="app.downloadQuiz()">
                             ⬇️ Quiz speichern
                         </button>
@@ -40,15 +46,12 @@
                             📂 Quiz laden
                         </button>
                         <button class="btn btn-small" onclick="app.loadDefaultQuiz()">
-                            🎯 Default-Demo-Quiz laden
-                        </button>
-                        <button class="btn btn-small" onclick="app.resetQuiz()">
-                            🆕 Neues Quiz
+                            🎯 Demo-Quiz laden
                         </button>
                     </div>
                     
                     <div class="menu-section">
-                        <h4>Spielstand verwalten</h4>
+                        <h4>Spiel verwalten</h4>
                         <button class="btn btn-small" onclick="app.saveCurrentGame()">
                             💾 Spielstand speichern
                         </button>
@@ -56,7 +59,7 @@
                             📂 Spielstand laden
                         </button>
                         <button class="btn btn-small" onclick="app.resetTeams()">
-                            🔄 Teams zurücksetzen
+                            🔄 Spielstand zurücksetzen
                         </button>
                     </div>
                     
@@ -72,35 +75,20 @@
         <!-- New Game Setup Screen -->
         <div id="gameSetup" class="screen hidden">
             <div class="setup-content">
-                <h2>Neues Spiel einrichten</h2>
-                
+                <h2>Neues Quiz erstellen</h2>
+
                 <div class="setup-section">
-                    <label for="teamCount">Anzahl Teams (2-4):</label>
-                    <input type="number" id="teamCount" min="2" max="4" value="2" onchange="app.renderGameSetup()">
+                    <label for="categoryCount">Anzahl der Kategorien (2-6):</label>
+                    <input type="number" id="categoryCount" min="2" max="6" value="4" onchange="app.renderGameSetup()">
                 </div>
 
                 <div class="setup-section">
-                    <label for="categoryCount">Anzahl Kategorien (3-6):</label>
-                    <input type="number" id="categoryCount" min="3" max="6" value="3" onchange="app.renderGameSetup()">
-                </div>
-
-                <div class="setup-section">
-                    <label>Team-Namen:</label>
-                    <div id="teamNamesContainer" class="team-names-container"></div>
-                </div>
-
-                <div class="setup-section">
-                    <label>Kategorien:</label>
-                    <div id="categoriesContainer" class="categories-container"></div>
-                </div>
-
-                <div class="setup-section">
-                    <label for="pointsInput">Punkte-Schema (kommasepariert):</label>
+                    <label for="pointsInput">Punkteschema (kommasepariert):</label>
                     <input type="text" id="pointsInput" placeholder="z.B. 100,200,300,400,500" value="100,200,300,400,500">
                 </div>
 
                 <div class="button-group">
-                    <button class="btn btn-primary" onclick="app.startNewGame()">Zum Editor</button>
+                    <button class="btn btn-primary" onclick="app.startNewGame()">Editor starten</button>
                     <button class="btn btn-secondary" onclick="app.goToStartMenu()">Abbrechen</button>
                 </div>
             </div>
@@ -112,15 +100,15 @@
                 <h2>Teams wählen</h2>
                 <div class="setup-section">
                     <label for="teamCountQuick">Anzahl Teams (2-4):</label>
-                    <input type="number" id="teamCountQuick" min="2" max="4" value="2">
+                    <input type="number" id="teamCountQuick" min="2" max="4" value="2" onchange="app.renderTeamSetup()" oninput="app.renderTeamSetup()">
                 </div>
                 <div class="setup-section">
                     <label>Team-Namen:</label>
                     <div id="teamNamesQuick"></div>
                 </div>
                 <div class="button-group">
-                    <button class="btn btn-primary" id="startQuickGame">Jetzt starten</button>
-                    <button class="btn btn-secondary" id="cancelQuickGame">Abbrechen</button>
+                    <button class="btn btn-primary" id="startQuickGame" onclick="app.startGameFromTeamSetup()">Spiel starten</button>
+                    <button class="btn btn-secondary" id="cancelQuickGame" onclick="app.goToStartMenu()">Abbrechen</button>
                 </div>
             </div>
         </div>
@@ -128,7 +116,7 @@
         <!-- Editor Screen -->
         <div id="editor" class="screen hidden">
             <div class="editor-content">
-                <h2>Quiz Editor</h2>
+                <h2>Quiz-Editor</h2>
                 
                 <div class="editor-main">
                     <div class="editor-sidebar">
@@ -139,12 +127,6 @@
                         <h3>Kategorien</h3>
                         <div id="categoryList" class="category-list"></div>
                         <button class="btn btn-small btn-primary" onclick="app.editor.addCategory()">+ Kategorie</button>
-                        
-                        <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border-color);">
-                        
-                        <h3>Teams</h3>
-                        <div id="teamsList" class="team-list"></div>
-                        <button class="btn btn-small btn-tertiary" onclick="app.editor.addTeam()">+ Team</button>
                     </div>
 
                     <div class="editor-questions">
@@ -154,7 +136,7 @@
                 </div>
 
                 <div class="button-group">
-                    <button class="btn btn-primary" onclick="app.editor.saveAndPlay()">Spielen</button>
+                    <button class="btn btn-primary" onclick="app.editor.saveAndPlay()">Spiel starten</button>
                     <button class="btn btn-secondary" onclick="app.downloadQuiz()">⬇️ Quiz speichern</button>
                     <button class="btn btn-secondary" onclick="app.goToStartMenu()">🏠 Hauptmenü</button>
                 </div>
@@ -169,7 +151,7 @@
                     <div class="ranking-link">
                         <button class="btn btn-small btn-tertiary" onclick="app.saveCurrentGame()">💾 Spielstand speichern</button>
                         <button class="btn btn-small" onclick="app.goToStartMenu()">🏠 Hauptmenü</button>
-                        <button class="btn btn-small btn-danger" onclick="app.resetGame()">🔄 Spielstand zurücksetzen</button>
+                        <button id="resetGameButton" class="btn btn-small btn-danger">🔄 Spielstand zurücksetzen</button>
                     </div>
                 </div>
                 <div class="quiz-main-content">

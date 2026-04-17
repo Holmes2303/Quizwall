@@ -168,6 +168,20 @@ body {
     min-height: 1.5rem;
 }
 
+.main-menu-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+    gap: 1rem;
+    width: min(100%, 760px);
+    margin: 0 auto 1.25rem auto;
+}
+
+.main-menu-actions .btn-large {
+    width: 100%;
+    max-width: none;
+    min-height: 4rem;
+}
+
 @keyframes slideDown {
     from {
         transform: translateY(-30px);
@@ -210,6 +224,11 @@ body {
     width: calc(50% - 0.5rem);
 }
 
+.menu-section .btn-section-action {
+    width: calc(100% - 0.5rem);
+    margin-bottom: 0.6rem;
+}
+
 .btn {
     padding: 0.75rem 1.5rem;
     border: none;
@@ -228,6 +247,20 @@ body {
 
 .btn:active {
     transform: translateY(0);
+}
+
+.btn:disabled,
+.btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn:disabled:hover,
+.btn.disabled:hover {
+    transform: none;
+    box-shadow: none;
 }
 
 .btn-primary {
@@ -276,6 +309,12 @@ body {
 .btn-small {
     padding: 0.5rem 1rem;
     font-size: 0.9rem;
+}
+
+@media (max-width: 760px) {
+    .main-menu-actions {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* Setup Screen */
