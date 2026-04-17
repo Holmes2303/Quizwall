@@ -1,3 +1,40 @@
+.custom-modal > div {
+    width: 60vw !important;
+    height: 60vh !important;
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+}
+.custom-modal h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+}
+.custom-modal .modal-content, .custom-modal .answer-text, .custom-modal .question-text {
+    font-size: 2.1rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+.quiz-wall-area {
+    height: 60vh;
+    max-height: 60vh;
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+}
+.quiz-header-row {
+    display: grid;
+    gap: 10px;
+    width: 65vw;
+    max-width: 1100px;
+    min-width: 400px;
+    grid-template-columns: repeat(var(--category-count, 3), 1fr);
+    margin-bottom: 10px;
+    background: none;
+}
 /* CSS Variables for Theming */
 :root {
     --primary-color: #E25D03;
@@ -510,16 +547,20 @@ body {
 /* Quiz Wall */
 .quiz-wall-container {
     padding: 1.5rem;
-    height: 100%;
+    height: 80vh;
+    min-height: 500px;
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
 }
 
 .quiz-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
+    align-items: flex-end;
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
 }
 
 .quiz-header h2 {
@@ -532,24 +573,45 @@ body {
 }
 
 .quiz-main-content {
-    display: grid;
-    grid-template-columns: 1fr auto;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+    width: 100%;
+    height: 100%;
     gap: 2rem;
-    flex: 1;
-    min-height: 0;
 }
 
 .quiz-board {
     display: grid;
-    gap: 1rem;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(clamp(120px, 18vw, 200px), 1fr);
-    min-height: 400px;
+    gap: 10px;
+    width: 65vw;
+    max-width: 1100px;
+    min-width: 400px;
+    height: 60vh;
+    max-height: 60vh;
+    min-height: 0;
+    flex: unset;
+    grid-auto-rows: 1fr;
+    background: none;
+    align-items: stretch;
+    justify-items: stretch;
+    grid-template-columns: repeat(var(--category-count, 3), 1fr);
+    grid-auto-rows: 1fr;
 }
 
 .quiz-sidebar {
-    width: 250px;
-    display: none;
+    width: 300px;
+    min-width: 220px;
+    max-width: 350px;
+    margin-left: 0.5rem;
+    display: block !important;
+    height: 80vh;
+    background: var(--card-color);
+    border-radius: 1rem;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow-y: auto;
 }
 
 .quiz-sidebar.visible {
@@ -557,12 +619,12 @@ body {
 }
 
 .quiz-sidebar .ranking-container {
-    background-color: var(--card-color);
-    border-radius: 1rem;
-    padding: 1.5rem;
-    box-shadow: var(--shadow);
-    position: sticky;
-    top: 0;
+    background-color: transparent;
+    border-radius: 0;
+    padding: 1.5rem 1rem;
+    box-shadow: none;
+    position: static;
+    top: unset;
 }
 
 .quiz-sidebar .ranking-container h3 {
@@ -584,36 +646,46 @@ body {
 .column-header {
     background-color: var(--primary-color);
     color: white;
-    padding: 1rem;
+    padding: 0.7rem 0.5rem;
     border-radius: 0.5rem;
     text-align: center;
-    font-weight: 600;
-    min-height: clamp(60px, 7vh, 90px);
+    font-weight: 700;
+    min-height: 48px;
+    max-height: 80px;
     display: flex;
     align-items: center;
     justify-content: center;
     word-break: break-word;
-    font-size: clamp(1rem, 1.7vw, 1.35rem);
+    font-size: 2.1rem;
+    letter-spacing: 0.01em;
 }
 
 .quiz-card {
     background: linear-gradient(135deg, var(--primary-color), #0056b3);
     color: white;
-    padding: clamp(0.75rem, 1.2vw, 1rem);
+    padding: 0.2rem;
     border-radius: 0.5rem;
     cursor: pointer;
     text-align: center;
-    font-weight: 600;
-    font-size: clamp(1rem, 2vw, 1.5rem);
-    min-height: clamp(70px, 9vh, 110px);
+    font-weight: 700;
+    font-size: 2.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: var(--transition);
     box-shadow: var(--shadow);
     user-select: none;
-    aspect-ratio: 1.67;
     width: 100%;
+    background-clip: padding-box;
+    margin: 0;
+    min-height: 80px;
+    max-height: 180px;
+}
+
+.quiz-card .points {
+    font-size: 2.2em;
+    font-weight: 800;
+    letter-spacing: 0.01em;
 }
 
 .quiz-card:hover:not(.disabled) {
@@ -626,9 +698,9 @@ body {
 }
 
 .quiz-card.disabled {
-    background: linear-gradient(135deg, #ccc, #999);
+    background: linear-gradient(135deg, #eee, #bbb);
     cursor: not-allowed;
-    opacity: 0.5;
+    opacity: 0.6;
     color: #666;
 }
 

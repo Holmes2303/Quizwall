@@ -106,6 +106,25 @@
             </div>
         </div>
 
+        <!-- Team Setup Screen (Quick Start) -->
+        <div id="teamSetup" class="screen hidden">
+            <div class="setup-content">
+                <h2>Teams wählen</h2>
+                <div class="setup-section">
+                    <label for="teamCountQuick">Anzahl Teams (2-4):</label>
+                    <input type="number" id="teamCountQuick" min="2" max="4" value="2">
+                </div>
+                <div class="setup-section">
+                    <label>Team-Namen:</label>
+                    <div id="teamNamesQuick"></div>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-primary" id="startQuickGame">Jetzt starten</button>
+                    <button class="btn btn-secondary" id="cancelQuickGame">Abbrechen</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Editor Screen -->
         <div id="editor" class="screen hidden">
             <div class="editor-content">
@@ -153,15 +172,17 @@
                         <button class="btn btn-small btn-danger" onclick="app.resetGame()">🔄 Spielstand zurücksetzen</button>
                     </div>
                 </div>
-                
                 <div class="quiz-main-content">
+                  <div style="flex: 1; display: flex; flex-direction: column; gap: 0;">
+                    <div class="quiz-header-row" id="categoryHeader"></div>
                     <div class="quiz-board" id="quizBoard"></div>
-                    <div class="quiz-sidebar" id="quizSidebar">
-                        <div class="ranking-container">
-                            <h3>Ranking</h3>
-                            <div id="sidebarRankingList" class="ranking-list"></div>
-                        </div>
+                  </div>
+                  <div class="quiz-sidebar" id="quizSidebar">
+                    <div class="ranking-container">
+                        <h3>Ranking</h3>
+                        <div id="sidebarRankingList" class="ranking-list"></div>
                     </div>
+                  </div>
                 </div>
             </div>
         </div>
