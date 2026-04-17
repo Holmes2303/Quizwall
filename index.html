@@ -48,6 +48,9 @@
                         <button class="btn btn-small" onclick="app.loadDefaultQuiz()">
                             🎯 Demo-Quiz laden
                         </button>
+                        <button class="btn btn-small" onclick="app.showAiImportFlow()">
+                            🤖 KI-Quiz importieren
+                        </button>
                     </div>
                     
                     <div class="menu-section">
@@ -212,6 +215,83 @@
                 <div id="rankingList" class="ranking-list"></div>
                 <div class="button-group">
                     <button class="btn btn-primary" onclick="app.goToQuizWall()">Zurück zur Quizwand</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Import Screen -->
+        <div id="aiImport" class="screen hidden">
+            <div class="ai-import-content">
+                <h2>KI-Quiz importieren</h2>
+
+                <div class="ai-import-grid">
+                    <div class="setup-section">
+                        <label for="aiSourceMode">Quiz-Basis:</label>
+                        <select id="aiSourceMode" onchange="app.toggleAiSourceMode()">
+                            <option value="topic" selected>Freies Thema (Thema + Zielgruppe)</option>
+                            <option value="material">Konkret hochgeladenes Material</option>
+                        </select>
+                    </div>
+
+                    <div class="setup-section hidden" id="aiMaterialSection">
+                        <small>
+                            Lade dein Material (z. B. PDFs, Transkripte) direkt in deiner externen KI hoch. Die QuizWall selbst uebertraegt keine Dateien.
+                        </small>
+                        <label for="aiMaterialContext" style="margin-top: 0.75rem;">Material-Hinweise/Inhaltsauszuege:</label>
+                        <textarea id="aiMaterialContext" rows="4" placeholder="z. B. Arbeitsblatt 1: Kapitel 2-4, Filmtranskript: Szenen 5-8" oninput="app.updateAiPromptPreview()"></textarea>
+                    </div>
+
+                    <div id="aiTopicFields" class="ai-import-grid" style="grid-column: 1 / -1; gap: 1rem;">
+                    <div class="setup-section">
+                        <label for="aiTheme">Thema:</label>
+                        <input type="text" id="aiTheme" placeholder="z. B. Klimawandel, Antike, IT-Sicherheit" oninput="app.updateAiPromptPreview()">
+                    </div>
+
+                    <div class="setup-section">
+                        <label for="aiAudience">Zielgruppe:</label>
+                        <input type="text" id="aiAudience" placeholder="z. B. Klasse 8, Azubis, Erwachsene" oninput="app.updateAiPromptPreview()">
+                    </div>
+                    </div>
+
+                    <div class="setup-section">
+                        <label for="aiMaxQuestions">Maximale Anzahl Fragen:</label>
+                        <input type="number" id="aiMaxQuestions" min="4" max="60" value="20" oninput="app.updateAiPromptPreview()" onchange="app.updateAiPromptPreview()">
+                    </div>
+
+                    <div class="setup-section">
+                        <label for="aiCategoryMode">Kategorien:</label>
+                        <select id="aiCategoryMode" onchange="app.toggleAiCategoryInput()">
+                            <option value="auto" selected>KI soll sinnvolle Kategorien erstellen</option>
+                            <option value="preset">Kategorien vorgeben</option>
+                        </select>
+                    </div>
+
+                    <div class="setup-section hidden" id="aiPresetCategoriesSection">
+                        <label for="aiPresetCategories">Vorgegebene Kategorien (kommasepariert):</label>
+                        <input type="text" id="aiPresetCategories" placeholder="z. B. Geschichte, Politik, Kultur, Wissenschaft" oninput="app.updateAiPromptPreview()">
+                    </div>
+
+                    <div class="setup-section">
+                        <label for="aiSpecialWishes">Besondere Wünsche (optional):</label>
+                        <textarea id="aiSpecialWishes" rows="3" placeholder="z. B. alltagsnahe Fragen, keine Trickfragen, Fokus Europa" oninput="app.updateAiPromptPreview()"></textarea>
+                    </div>
+                </div>
+
+                <div class="setup-section">
+                    <label for="aiPromptOutput">Schritt 1: Prompt kopieren und in eine externe KI einfügen</label>
+                    <textarea id="aiPromptOutput" rows="12" readonly></textarea>
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="app.copyAiPrompt()">📋 Prompt kopieren</button>
+                    </div>
+                </div>
+
+                <div class="setup-section">
+                    <label for="aiResponseInput">Schritt 2: KI-Antwort hier einfügen (JSON oder JSON-Codeblock)</label>
+                    <textarea id="aiResponseInput" rows="12" placeholder="Hier die komplette Antwort der KI einfügen"></textarea>
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="app.importQuizFromAiResponse()">✅ KI-Quiz importieren</button>
+                        <button class="btn btn-secondary" onclick="app.goToStartMenu()">Abbrechen</button>
+                    </div>
                 </div>
             </div>
         </div>

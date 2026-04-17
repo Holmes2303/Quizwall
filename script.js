@@ -303,6 +303,299 @@ const app = {
         this.updateQuizInfo();
     },
 
+    showAiImportFlow() {
+        if (this.hasLoadedQuiz() || this.hasActiveGame()) {
+            this.showAiImportConfirmation(() => this.showAiImportScreen());
+            return;
+        }
+
+        this.showAiImportScreen();
+    },
+
+    showAiImportConfirmation(onConfirm) {
+        const modal = this.createModal('KI-Quiz importieren');
+        const text = document.createElement('p');
+        text.textContent = 'Ein importiertes KI-Quiz kann dein aktuelles Quiz und den Spielstand ersetzen. Fortfahren?';
+        text.style.margin = '1rem 0 1.25rem 0';
+        modal.content.appendChild(text);
+
+        const actions = document.createElement('div');
+        actions.className = 'button-group';
+
+        const confirmBtn = document.createElement('button');
+        confirmBtn.className = 'btn btn-danger';
+        confirmBtn.textContent = 'Ja, fortfahren';
+        confirmBtn.onclick = () => {
+            modal.close();
+            if (typeof onConfirm === 'function') onConfirm();
+        };
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'btn btn-secondary';
+        cancelBtn.textContent = 'Abbrechen';
+        cancelBtn.onclick = () => modal.close();
+
+        actions.appendChild(confirmBtn);
+        actions.appendChild(cancelBtn);
+        modal.content.appendChild(actions);
+    },
+
+    showAiImportScreen() {
+        this.showScreen('aiImport');
+        this.initAiImportForm();
+        this.updateAiPromptPreview();
+    },
+
+    initAiImportForm() {
+        const defaults = {
+            aiSourceMode: 'topic',
+            aiTheme: '',
+            aiAudience: '',
+            aiMaxQuestions: '20',
+            aiCategoryMode: 'auto',
+            aiPresetCategories: '',
+            aiSpecialWishes: '',
+            aiMaterialContext: ''
+        };
+
+        Object.entries(defaults).forEach(([id, value]) => {
+            const input = document.getElementById(id);
+            if (input && !input.value) input.value = value;
+        });
+
+        this.toggleAiSourceMode();
+        this.toggleAiCategoryInput();
+    },
+
+    toggleAiSourceMode() {
+        const mode = document.getElementById('aiSourceMode')?.value || 'topic';
+        const topicFields = document.getElementById('aiTopicFields');
+        const materialSection = document.getElementById('aiMaterialSection');
+
+        if (topicFields) {
+            topicFields.classList.toggle('hidden', mode !== 'topic');
+        }
+        if (materialSection) {
+            materialSection.classList.toggle('hidden', mode !== 'material');
+        }
+
+        this.updateAiPromptPreview();
+    },
+
+    toggleAiCategoryInput() {
+        const mode = document.getElementById('aiCategoryMode')?.value || 'auto';
+        const section = document.getElementById('aiPresetCategoriesSection');
+        if (section) {
+            section.classList.toggle('hidden', mode !== 'preset');
+        }
+
+        this.updateAiPromptPreview();
+    },
+
+    buildAiPrompt() {
+        const sourceMode = document.getElementById('aiSourceMode')?.value || 'topic';
+        const theme = (document.getElementById('aiTheme')?.value || '').trim() || 'Allgemeinwissen';
+        const audience = (document.getElementById('aiAudience')?.value || '').trim() || 'gemischte Zielgruppe';
+        const maxQuestionsInput = parseInt(document.getElementById('aiMaxQuestions')?.value, 10);
+        const maxQuestions = Number.isInteger(maxQuestionsInput)
+            ? Math.max(4, Math.min(60, maxQuestionsInput))
+            : 20;
+        const categoryMode = document.getElementById('aiCategoryMode')?.value || 'auto';
+        const presetRaw = (document.getElementById('aiPresetCategories')?.value || '').trim();
+        const special = (document.getElementById('aiSpecialWishes')?.value || '').trim();
+        const materialContext = (document.getElementById('aiMaterialContext')?.value || '').trim();
+
+        const presetCategories = presetRaw
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean);
+
+        const categoryInstruction = categoryMode === 'preset' && presetCategories.length > 0
+            ? `Nutze exakt diese Kategorien: ${presetCategories.join(', ')}.`
+            : 'Leite selbst sinnvolle Kategorien aus dem Thema ab.';
+
+        const specialInstruction = special
+            ? `Besondere Wuensche: ${special}`
+            : 'Keine besonderen Zusatzwuensche.';
+
+        const sourceInstructions = sourceMode === 'material'
+            ? [
+                'Quiz-Basis: Konkretes hochgeladenes Material.',
+                'Erstelle Fragen ausschliesslich auf Basis des bereitgestellten Materials.',
+                'WICHTIG: Der Nutzer laedt das Material direkt in der externen KI hoch.',
+                materialContext
+                    ? `Material-Hinweise/Inhaltsauszuege: ${materialContext}`
+                    : 'Material-Hinweise/Inhaltsauszuege: keine weiteren Angaben.',
+                'Wenn Material unklar ist, treffe keine Faktenannahmen ausserhalb des Materials.'
+            ]
+            : [
+                `Thema: ${theme}`,
+                `Zielgruppe: ${audience}`
+            ];
+
+        return [
+            'Du erstellst ein Quiz fuer eine Jeopardy-Quizwand.',
+            'WICHTIG: Gib AUSSCHLIESSLICH gueltiges JSON zurueck. Kein Text davor oder danach.',
+            '',
+            ...sourceInstructions,
+            `Maximale Gesamtanzahl Fragen: ${maxQuestions}`,
+            categoryInstruction,
+            specialInstruction,
+            '',
+            'Anforderungen an die Struktur:',
+            '- Gib ein JSON-Objekt mit den Feldern "quizTitle" und "categories" zurueck.',
+            '- "categories" ist ein Array von Kategorien.',
+            '- Jede Kategorie hat: "name" (String) und "questions" (Array).',
+            '- Kategorienamen kurz halten: maximal 3 Zeilen à 24 Zeichen (also hoechstens 72 Zeichen pro Kategoriename).',
+            '- Jede Frage hat: "points" (Integer > 0), "question" (String), "answer" (String).',
+            '- Nutze sinnvolle Punktestufen pro Kategorie (z. B. 100,200,300,400,500).',
+            '- Ueberschreite die maximale Gesamtanzahl Fragen nicht.',
+            '',
+            'Beispielformat (Schema):',
+            '{',
+            '  "quizTitle": "Titel",',
+            '  "categories": [',
+            '    {',
+            '      "name": "Kategorie 1",',
+            '      "questions": [',
+            '        { "points": 100, "question": "...", "answer": "..." }',
+            '      ]',
+            '    }',
+            '  ]',
+            '}'
+        ].join('\n');
+    },
+
+    updateAiPromptPreview() {
+        const output = document.getElementById('aiPromptOutput');
+        if (!output) return;
+        output.value = this.buildAiPrompt();
+    },
+
+    async copyAiPrompt() {
+        const output = document.getElementById('aiPromptOutput');
+        if (!output) return;
+
+        const text = output.value;
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(text);
+            } else {
+                output.focus();
+                output.select();
+                document.execCommand('copy');
+            }
+            alert('Prompt wurde in die Zwischenablage kopiert.');
+        } catch (err) {
+            alert('Kopieren fehlgeschlagen. Bitte Prompt manuell kopieren.');
+        }
+    },
+
+    extractJsonFromAiResponse(rawText) {
+        const text = (rawText || '').trim();
+        if (!text) {
+            throw new Error('Bitte fuege zuerst eine KI-Antwort ein.');
+        }
+
+        const fencedMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+        if (fencedMatch && fencedMatch[1]) {
+            return fencedMatch[1].trim();
+        }
+
+        const start = text.indexOf('{');
+        const end = text.lastIndexOf('}');
+        if (start === -1 || end === -1 || end <= start) {
+            throw new Error('Kein gueltiges JSON-Objekt in der KI-Antwort gefunden.');
+        }
+
+        return text.slice(start, end + 1);
+    },
+
+    normalizeImportedQuiz(parsed) {
+        const categoriesSource = Array.isArray(parsed.categories)
+            ? parsed.categories
+            : (parsed.quiz && Array.isArray(parsed.quiz.categories)
+                ? parsed.quiz.categories
+                : (parsed.game && Array.isArray(parsed.game.categories)
+                    ? parsed.game.categories
+                    : null));
+
+        if (!categoriesSource || categoriesSource.length === 0) {
+            throw new Error('Die KI-Antwort enthaelt keine gueltigen Kategorien.');
+        }
+
+        const categories = categoriesSource.map((cat, cIdx) => {
+            const name = (cat && typeof cat.name === 'string' && cat.name.trim())
+                ? cat.name.trim()
+                : `Kategorie ${cIdx + 1}`;
+
+            const sourceQuestions = Array.isArray(cat?.questions) ? cat.questions : [];
+            if (sourceQuestions.length === 0) {
+                throw new Error(`Kategorie ${cIdx + 1} enthaelt keine Fragen.`);
+            }
+
+            const questions = sourceQuestions.map((q, qIdx) => {
+                const pointsNum = parseInt(q?.points, 10);
+                const points = Number.isInteger(pointsNum) && pointsNum > 0
+                    ? pointsNum
+                    : 100 * (qIdx + 1);
+                const question = typeof q?.question === 'string' ? q.question.trim() : '';
+                const answer = typeof q?.answer === 'string' ? q.answer.trim() : '';
+
+                if (!question || !answer) {
+                    throw new Error(`Frage ${qIdx + 1} in Kategorie ${cIdx + 1} ist unvollstaendig.`);
+                }
+
+                return {
+                    id: `q-${cIdx}-${qIdx}`,
+                    points,
+                    question,
+                    answer
+                };
+            });
+
+            return {
+                id: cIdx,
+                name,
+                questions
+            };
+        });
+
+        const generatedTitle = (document.getElementById('aiTheme')?.value || '').trim();
+        const quizTitle = (parsed.quizTitle || parsed.title || '').toString().trim() ||
+            (generatedTitle ? `KI-Quiz: ${generatedTitle}` : 'KI-Quiz');
+
+        return { quizTitle, categories };
+    },
+
+    importQuizFromAiResponse() {
+        const input = document.getElementById('aiResponseInput');
+        if (!input) return;
+
+        try {
+            const jsonText = this.extractJsonFromAiResponse(input.value);
+            const parsed = JSON.parse(jsonText);
+            const imported = this.normalizeImportedQuiz(parsed);
+
+            this.state.quizTitle = imported.quizTitle;
+            this.state.editor.categories = imported.categories;
+            this.state.editor.teams = [];
+            this.state.game = null;
+            this.state.playedQuestions = new Set();
+            this.state.currentQuestion = null;
+            this.state.quickTeamNames = [];
+
+            this.saveGameState();
+            this.showScreen('editor');
+            this.renderEditor();
+            this.updateQuizInfo();
+
+            alert('KI-Quiz erfolgreich importiert.');
+        } catch (err) {
+            alert('Import fehlgeschlagen: ' + err.message);
+        }
+    },
+
     hasLoadedQuiz() {
         return Array.isArray(this.state.editor.categories) && this.state.editor.categories.length > 0;
     },
@@ -476,6 +769,45 @@ const app = {
             .split(',')
             .map(value => parseInt(value.trim(), 10))
             .filter(value => Number.isInteger(value) && value > 0);
+    },
+
+    getCategoryTitleLimits() {
+        return {
+            maxLines: 3,
+            maxCharsPerLine: 24,
+            minFontPx: 11,
+            maxFontPx: 34
+        };
+    },
+
+    formatCategoryTitle(rawTitle) {
+        const limits = this.getCategoryTitleLimits();
+        const maxTotalChars = limits.maxLines * limits.maxCharsPerLine;
+        const cleaned = String(rawTitle || '').replace(/\s+/g, ' ').trim();
+
+        if (cleaned.length <= maxTotalChars) return cleaned;
+        return `${cleaned.slice(0, Math.max(1, maxTotalChars - 1)).trimEnd()}…`;
+    },
+
+    fitCategoryHeaderText(headerElement) {
+        if (!headerElement) return;
+
+        const limits = this.getCategoryTitleLimits();
+        headerElement.style.setProperty('--category-title-max-lines', String(limits.maxLines));
+
+        let size = limits.maxFontPx;
+        headerElement.style.fontSize = `${size}px`;
+
+        const maxHeight = headerElement.clientHeight;
+        const maxWidth = headerElement.clientWidth;
+
+        while (
+            size > limits.minFontPx &&
+            (headerElement.scrollHeight > maxHeight + 1 || headerElement.scrollWidth > maxWidth + 1)
+        ) {
+            size -= 1;
+            headerElement.style.fontSize = `${size}px`;
+        }
     },
 
     startNewGame() {
@@ -754,11 +1086,27 @@ const app = {
         root.style.setProperty('--category-count', categories.length);
 
         // Header als Grid
-        categories.forEach((cat) => {
+        const headerElements = [];
+        categories.forEach((cat, idx) => {
             const hDiv = document.createElement('div');
             hDiv.className = 'column-header';
-            hDiv.textContent = cat.name;
+
+            const rawName = (cat && typeof cat.name === 'string' && cat.name.trim())
+                ? cat.name.trim()
+                : `Kategorie ${idx + 1}`;
+            const displayName = this.formatCategoryTitle(rawName);
+
+            hDiv.textContent = displayName;
+            if (displayName !== rawName) {
+                hDiv.title = rawName;
+            }
+
             header.appendChild(hDiv);
+            headerElements.push(hDiv);
+        });
+
+        window.requestAnimationFrame(() => {
+            headerElements.forEach(el => this.fitCategoryHeaderText(el));
         });
 
         // Quiz-Board als Grid (Spalten = Kategorien, Zeilen = Fragen)
