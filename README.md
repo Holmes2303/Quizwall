@@ -21,7 +21,7 @@ Interaktive Jeopardy-Quiz-App (Vanilla HTML, CSS, JavaScript) mit Editor, Spiels
 - Farbschema-Einstellungen (Primaer-, Hintergrund-, Textfarbe)
 - KI-Import-Flow mit Prompt-Generator und JSON-Parser
 
-## Neuerungen (Version 0.7+)
+## Neuerungen (Version 0.8)
 
 ### 1) KI-Quiz-Import
 
@@ -83,6 +83,42 @@ Danach wird die Frage als gespielt markiert und die Quizwand aktualisiert.
 - Kategorienamen werden auf max. 3 Zeilen begrenzt
 - Lange Namen werden gekuerzt
 - Schriftgroesse passt sich automatisch an die Kachelbreite an
+
+### 8) Mobile-First Quizwand und Floating Actions
+
+- Quizwand wurde fuer kleine Displays und Touchgeraete ueberarbeitet
+- Zwei mobile Floating-Buttons auf der Quizwand:
+  - `🏆` fuer Ranking
+  - `🏠` fuer Hauptmenue
+- Sidebar-Ranking wird auf kompakten Layouts ausgeblendet, um Platz fuer die Quizkacheln zu schaffen
+- Header-Kacheln und Fragekacheln bleiben auch mobil spaltenweise deckungsgleich
+
+### 9) Verbesserte Darstellung in Hoch- und Querformat
+
+- Eigene Anpassungen fuer Portrait und Landscape auf Smartphones
+- Typografie und Kachelgroessen skalieren je nach verfuegbarer Hoehe/Breite
+- Quizwand nutzt den verfuegbaren Screen in mobilen Szenarien deutlich besser aus
+
+### 10) Adaptive Mobile-Modals fuer Frage, Antwort und Ranking
+
+- Frage-, Antwort- und Ranking-Modal wurden fuer Mobilansichten dynamisch optimiert
+- Schriftgroesse und Abstaende orientieren sich an der verfuegbaren Bildschirmhoehe
+- Ziel: moeglichst viel Inhalt ohne Scrollen bei weiterhin guter Lesbarkeit
+- Bei sehr knapper Hoehe kann die Ueberschrift in den mobilen Modals automatisch ausgeblendet werden
+
+### 11) Antwort-Modal mit besserer Informations-Hierarchie
+
+- Antwortbereich bleibt oben im Modal
+- Team-Auswahlblock (`Welche Teams haben richtig geantwortet?`) ist im unteren Bereich verankert
+- Teamliste ist ausrichtungsabhaengig:
+  - Hochformat: untereinander
+  - Querformat: nebeneinander
+  - Bei 6+ Teams im Querformat automatisch 3 Spalten
+
+### 12) Startmenue-Scrollverhalten korrigiert
+
+- Das Startmenue ist so angepasst, dass Ueberschriften und oberer Bereich auch auf kleinen Displays vollstaendig erreichbar bleiben
+- Vertikale Positionierung/Scrollbarkeit wurden entsprechend ueberarbeitet
 
 ## Bedienung
 
@@ -215,6 +251,7 @@ Keine Build-Tools erforderlich.
 - Die App ist clientseitig und funktioniert ohne Backend.
 - JSON-Import erwartet valide Strukturen mit Kategorien und Fragen.
 - Beim KI-Flow werden keine Dateien direkt aus der App an KI-Dienste uebertragen.
+- Mobile Darstellung ist fuer Hoch- und Querformat optimiert; sehr kleine Viewports erhalten zusaetzliche kompakte Regeln.
 
 ## Lizenz
 
