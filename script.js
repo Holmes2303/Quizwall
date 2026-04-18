@@ -60,12 +60,14 @@ const app = {
         },
 
         showQuestionModal(questionText, onNext) {
-            this.createSimpleModal('Frage', questionText, 'Weiter', onNext, { layout: 'qa' });
+            this.createSimpleModal('Frage', questionText, 'Weiter', onNext, { layout: 'qa', modalType: 'question' });
         },
 
         showAnswerModal(answerText, onNext) {
             // Modal mit Antworttext, Team-Auswahl und Weiter-Button
             const modal = this.createModal('Antwort', { layout: 'qa' });
+            const modalRoot = modal.content.closest('.custom-modal');
+            modalRoot?.classList.add('custom-modal-answer');
             const body = document.createElement('div');
             body.className = 'qa-modal-body';
 
@@ -74,11 +76,14 @@ const app = {
             content.textContent = answerText;
             body.appendChild(content);
 
+            const teamSection = document.createElement('div');
+            teamSection.className = 'qa-team-section';
+
             // Team-Auswahl direkt darunter
             const info = document.createElement('div');
             info.className = 'qa-modal-info';
             info.textContent = 'Welche Teams haben richtig geantwortet?';
-            body.appendChild(info);
+            teamSection.appendChild(info);
 
             const teamList = document.createElement('div');
             teamList.className = 'qa-team-list';
@@ -97,7 +102,13 @@ const app = {
                 label.appendChild(document.createTextNode(team.name));
                 teamList.appendChild(label);
             });
-            body.appendChild(teamList);
+
+            this.applyQaModalSizing(modalRoot, {
+                modalType: 'answer',
+                teamCount: this.state.game.teams.length
+            });
+            teamSection.appendChild(teamList);
+            body.appendChild(teamSection);
             modal.content.appendChild(body);
 
             // Weiter-Button
@@ -120,6 +131,50 @@ const app = {
             };
             actions.appendChild(btn);
             modal.content.appendChild(actions);
+        },
+
+        applyQaModalSizing(modalRoot, { modalType = 'question', teamCount = 0 } = {}) {
+            if (!modalRoot) return;
+
+            const isMobile = window.matchMedia('(max-width: 768px)').matches
+                || window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+            if (!isMobile) return;
+
+            if (modalType === 'question') {
+                modalRoot.classList.add('custom-modal-question');
+            }
+
+            const viewportHeight = window.innerHeight;
+            const isLandscape = window.matchMedia('(orientation: landscape)').matches;
+            const hideTitle = viewportHeight <= 520 || (isLandscape && viewportHeight <= 620);
+            modalRoot.classList.toggle('compact-no-title', hideTitle);
+
+            const teamColumns = modalType === 'answer'
+                ? (isLandscape ? (teamCount >= 6 ? 3 : 2) : 1)
+                : 1;
+
+            const targetHeight = viewportHeight * 0.8;
+            const titleAllowance = hideTitle ? 0 : 52;
+            const actionAllowance = 56;
+            const frameAllowance = modalType === 'answer' ? 118 : 98;
+            const usableHeight = Math.max(180, targetHeight - titleAllowance - actionAllowance - frameAllowance);
+
+            const contentScale = modalType === 'answer'
+                ? usableHeight / Math.max(2, Math.ceil(teamCount / teamColumns) + 3)
+                : usableHeight / 4.2;
+
+            const contentFont = Math.max(15, Math.min(31, contentScale * (modalType === 'answer' ? 0.78 : 0.95)));
+            const infoFont = Math.max(13, Math.min(20, contentFont * 0.74));
+            const teamFont = Math.max(13, Math.min(21, contentFont * 0.7));
+            const buttonFont = Math.max(13, Math.min(18, contentFont * 0.68));
+
+            modalRoot.style.setProperty('--qa-card-height', '82vh');
+            modalRoot.style.setProperty('--qa-title-font-size', `${Math.max(18, Math.min(30, contentFont * 1.02))}px`);
+            modalRoot.style.setProperty('--qa-content-font-size', `${contentFont}px`);
+            modalRoot.style.setProperty('--qa-info-font-size', `${infoFont}px`);
+            modalRoot.style.setProperty('--qa-team-font-size', `${teamFont}px`);
+            modalRoot.style.setProperty('--qa-button-font-size', `${buttonFont}px`);
+            modalRoot.style.setProperty('--qa-team-columns', teamColumns === 1 ? '1fr' : `repeat(${teamColumns}, minmax(0, 1fr))`);
         },
 
         showTeamSelectModal(qId, points, onNext) {
@@ -167,11 +222,19 @@ const app = {
         },
 
         showRankingModal(onNext) {
+            if (!this.hasActiveGame()) {
+                this.createSimpleModal('Ranking', 'Kein aktives Spiel vorhanden.', 'Schliessen');
+                return;
+            }
+
             const modal = this.createModal('Aktuelles Ranking', { layout: 'qa' });
+            const modalRoot = modal.content.closest('.custom-modal');
+            modalRoot?.classList.add('custom-modal-ranking');
             const body = document.createElement('div');
             body.className = 'qa-modal-body';
 
             const sorted = [...this.state.game.teams].sort((a, b) => b.score - a.score);
+            this.applyRankingModalSizing(modalRoot, sorted.length);
             const list = document.createElement('div');
             list.className = 'ranking-list';
             sorted.forEach((t, idx) => {
@@ -188,7 +251,7 @@ const app = {
             actions.className = 'qa-modal-actions';
             const btn = document.createElement('button');
             btn.className = 'btn btn-primary';
-            btn.textContent = 'Weiter';
+            btn.textContent = typeof onNext === 'function' ? 'Weiter' : 'Schliessen';
             btn.onclick = () => {
                 modal.close();
                 if (onNext) onNext();
@@ -198,10 +261,50 @@ const app = {
             modal.content.appendChild(actions);
         },
 
+        applyRankingModalSizing(modalRoot, teamCount) {
+            if (!modalRoot) return;
+
+            const isMobile = window.matchMedia('(max-width: 768px)').matches
+                || window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+            if (!isMobile) return;
+
+            const viewportHeight = window.innerHeight;
+            const isLandscape = window.matchMedia('(orientation: landscape)').matches;
+            const hideTitle = isLandscape && viewportHeight <= 520;
+            modalRoot.classList.toggle('compact-no-title', hideTitle);
+
+            const targetHeight = viewportHeight * 0.8;
+            const titleAllowance = hideTitle ? 0 : 56;
+            const actionAllowance = 56;
+            const frameAllowance = 110;
+            const availableRowsHeight = Math.max(140, targetHeight - titleAllowance - actionAllowance - frameAllowance);
+            const rowHeight = availableRowsHeight / Math.max(teamCount, 1);
+
+            const itemFontSize = Math.max(14, Math.min(22, rowHeight * 0.48));
+            const scoreFontSize = Math.max(itemFontSize, Math.min(24, itemFontSize + 2));
+            const padY = Math.max(6, Math.min(12, rowHeight * 0.22));
+            const padX = Math.max(8, Math.min(14, rowHeight * 0.35));
+
+            modalRoot.style.setProperty('--ranking-card-height', '82vh');
+            modalRoot.style.setProperty('--ranking-item-font-size', `${itemFontSize}px`);
+            modalRoot.style.setProperty('--ranking-score-font-size', `${scoreFontSize}px`);
+            modalRoot.style.setProperty('--ranking-item-pad-y', `${padY}px`);
+            modalRoot.style.setProperty('--ranking-item-pad-x', `${padX}px`);
+        },
+
+        showMobileRankingPopup() {
+            this.showRankingModal();
+        },
+
         createSimpleModal(title, text, buttonText, onNext, options = {}) {
             const modal = this.createModal(title, options);
 
             if (options.layout === 'qa') {
+                const modalRoot = modal.content.closest('.custom-modal');
+                if (options.modalType === 'question') {
+                    this.applyQaModalSizing(modalRoot, { modalType: 'question' });
+                }
+
                 const body = document.createElement('div');
                 body.className = 'qa-modal-body';
 
@@ -317,8 +420,36 @@ const app = {
         this.loadColorSettings();
         this.loadGameState();
         this.bindStaticUiHandlers();
+        this.bindResponsiveUiHandlers();
         this.showScreen('startMenu');
         this.updateQuizInfo();
+    },
+
+    bindResponsiveUiHandlers() {
+        const update = () => this.updateQuizWallResponsiveUi();
+        window.addEventListener('resize', update, { passive: true });
+        window.addEventListener('orientationchange', update, { passive: true });
+        update();
+    },
+
+    isCompactLayout() {
+        return window.matchMedia('(max-width: 1199px)').matches
+            || window.matchMedia('(max-height: 700px)').matches
+            || window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+    },
+
+    updateQuizWallResponsiveUi() {
+        const sidebar = document.getElementById('quizSidebar');
+        const fabStack = document.querySelector('.mobile-fab-stack');
+        const isCompact = this.isCompactLayout();
+
+        if (sidebar) {
+            sidebar.classList.toggle('mobile-hidden', isCompact);
+        }
+
+        if (fabStack) {
+            fabStack.classList.toggle('is-visible', isCompact);
+        }
     },
 
     bindStaticUiHandlers() {
@@ -355,6 +486,7 @@ const app = {
         const target = document.getElementById(screenId);
         if (target) target.classList.remove('hidden');
         this.state.currentScreenId = screenId;
+        this.updateQuizWallResponsiveUi();
     },
 
     goToStartMenu() {
@@ -835,7 +967,7 @@ const app = {
             maxLines: 3,
             maxCharsPerLine: 24,
             minFontPx: 11,
-            maxFontPx: 34
+            maxFontPx: 22
         };
     },
 
@@ -1167,6 +1299,8 @@ const app = {
         window.requestAnimationFrame(() => {
             headerElements.forEach(el => this.fitCategoryHeaderText(el));
         });
+
+        this.updateQuizWallResponsiveUi();
 
         // Quiz-Board als Grid (Spalten = Kategorien, Zeilen = Fragen)
         // (Grid-Template wird jetzt per CSS gesetzt)

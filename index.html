@@ -16,7 +16,7 @@
         <div id="startMenu" class="screen">
             <div class="start-menu-content">
                 <h1>Quiz Wall</h1>
-                <p class="subtitle">Jeopardy-Stil Spiel auf Basis eines Quiz V 0.7</p>
+                <p class="subtitle">Jeopardy-Stil Spiel auf Basis eines Quiz V 0.8</p>
                 <p id="quizInfo" class="quiz-info"></p>
 
                 <div class="main-menu-actions">
@@ -155,7 +155,7 @@
                     <h2 id="quizTitleDisplay">Quiz Wall</h2>
                 </div>
                 <div class="quiz-main-content">
-                  <div style="flex: 1; display: flex; flex-direction: column; gap: 0;">
+                                    <div class="quiz-board-panel">
                     <div class="quiz-header-row" id="categoryHeader"></div>
                     <div class="quiz-board" id="quizBoard"></div>
                   </div>
@@ -170,6 +170,14 @@
                                                 <button id="resetGameButton" class="btn btn-small btn-danger">🔄 Spielstand zurücksetzen</button>
                                         </div>
                   </div>
+                </div>
+                <div class="mobile-fab-stack" aria-label="Mobile Schnellaktionen">
+                    <button class="btn btn-secondary mobile-fab-btn mobile-fab-ranking" onclick="app.showMobileRankingPopup()" aria-label="Aktuelles Ranking anzeigen">
+                        🏆
+                    </button>
+                    <button class="btn btn-secondary mobile-fab-btn mobile-fab-menu" onclick="app.goToStartMenu()" aria-label="Zurueck ins Hauptmenue">
+                        🏠
+                    </button>
                 </div>
             </div>
         </div>
