@@ -131,7 +131,7 @@
                         </div>
                         <h3>Kategorien</h3>
                         <div id="categoryList" class="category-list"></div>
-                        <button class="btn btn-small btn-primary" onclick="app.editor.addCategory()">+ Kategorie</button>
+                        <button class="btn btn-small btn-primary editor-add-category-btn" onclick="app.editor.addCategory()" aria-label="Kategorie hinzufuegen">+ Kategorie</button>
                     </div>
 
                     <div class="editor-questions">
@@ -140,10 +140,10 @@
                     </div>
                 </div>
 
-                <div class="button-group">
-                    <button class="btn btn-primary" onclick="app.editor.saveAndPlay()">Spiel starten</button>
-                    <button class="btn btn-secondary" onclick="app.downloadQuiz()">⬇️ Quiz speichern</button>
-                    <button class="btn btn-secondary" onclick="app.goToStartMenu()">🏠 Hauptmenü</button>
+                <div class="button-group editor-action-group">
+                    <button class="btn btn-primary editor-fab-btn editor-fab-play" data-icon="▶" aria-label="Spiel starten" onclick="app.editor.saveAndPlay()">Spiel starten</button>
+                    <button class="btn btn-secondary editor-fab-btn editor-fab-save" data-icon="💾" aria-label="Quiz speichern" onclick="app.downloadQuiz()">Quiz speichern</button>
+                    <button class="btn btn-secondary editor-fab-btn editor-fab-home" data-icon="🏠" aria-label="Zum Hauptmenue" onclick="app.goToStartMenu()">Hauptmenü</button>
                 </div>
             </div>
         </div>

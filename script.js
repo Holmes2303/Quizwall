@@ -1506,11 +1506,7 @@ const app = {
         item.appendChild(header);
         item.appendChild(content);
 
-        // Erste Frage standardmäßig offen
-        if (questionIndex === 0) {
-            content.classList.add('open');
-            header.classList.add('open');
-        }
+        // Beim Rendern standardmaessig eingeklappt.
 
         return item;
     },
