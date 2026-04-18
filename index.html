@@ -16,7 +16,7 @@
         <div id="startMenu" class="screen">
             <div class="start-menu-content">
                 <h1>Quiz Wall</h1>
-                <p class="subtitle">Jeopardy-Stil Spiel auf Basis eines Quiz V 0.6</p>
+                <p class="subtitle">Jeopardy-Stil Spiel auf Basis eines Quiz V 0.7</p>
                 <p id="quizInfo" class="quiz-info"></p>
 
                 <div class="main-menu-actions">
@@ -28,45 +28,47 @@
                     </button>
                 </div>
 
-                <div class="button-group">
-                    <hr style="width: 100%; border: none; border-top: 1px solid var(--border-color); margin: 1rem 0;">
-                    
-                    <div class="menu-section">
-                        <h4>Quiz verwalten</h4>
-                        <button class="btn btn-small" onclick="app.resetQuiz()">
-                            🆕 Quiz neu erstellen
-                        </button>
-                        <button class="btn btn-small" onclick="app.showEditor()">
-                            ✏️ Editor öffnen
-                        </button>
-                        <button class="btn btn-small" onclick="app.downloadQuiz()">
-                            ⬇️ Quiz speichern
-                        </button>
-                        <button class="btn btn-small" onclick="document.getElementById('quizFileInput').click()">
-                            📂 Quiz laden
-                        </button>
-                        <button class="btn btn-small" onclick="app.loadDefaultQuiz()">
-                            🎯 Demo-Quiz laden
-                        </button>
-                        <button class="btn btn-small" onclick="app.showAiImportFlow()">
-                            🤖 KI-Quiz importieren
-                        </button>
+                <div class="start-menu-management">
+                    <hr class="start-menu-divider">
+
+                    <div class="menu-sections-grid">
+                        <div class="menu-section">
+                            <h4>Quiz verwalten</h4>
+                            <button class="btn btn-small" onclick="app.resetQuiz()">
+                                🆕 Quiz neu erstellen
+                            </button>
+                            <button class="btn btn-small" onclick="app.showEditor()">
+                                ✏️ Editor öffnen
+                            </button>
+                            <button class="btn btn-small" onclick="app.downloadQuiz()">
+                                ⬇️ Quiz speichern
+                            </button>
+                            <button class="btn btn-small" onclick="document.getElementById('quizFileInput').click()">
+                                📂 Quiz laden
+                            </button>
+                            <button class="btn btn-small" onclick="app.loadDefaultQuiz()">
+                                🎯 Demo-Quiz laden
+                            </button>
+                            <button class="btn btn-small" onclick="app.showAiImportFlow()">
+                                🤖 KI-Quiz importieren
+                            </button>
+                        </div>
+
+                        <div class="menu-section">
+                            <h4>Spiel verwalten</h4>
+                            <button class="btn btn-small" onclick="app.saveCurrentGame()">
+                                💾 Spielstand speichern
+                            </button>
+                            <button class="btn btn-small" onclick="document.getElementById('gameFileInput').click()">
+                                📂 Spielstand laden
+                            </button>
+                            <button class="btn btn-small" onclick="app.resetTeams()">
+                                🔄 Spielstand zurücksetzen
+                            </button>
+                        </div>
                     </div>
-                    
-                    <div class="menu-section">
-                        <h4>Spiel verwalten</h4>
-                        <button class="btn btn-small" onclick="app.saveCurrentGame()">
-                            💾 Spielstand speichern
-                        </button>
-                        <button class="btn btn-small" onclick="document.getElementById('gameFileInput').click()">
-                            📂 Spielstand laden
-                        </button>
-                        <button class="btn btn-small" onclick="app.resetTeams()">
-                            🔄 Spielstand zurücksetzen
-                        </button>
-                    </div>
-                    
-                    <button class="btn btn-tertiary btn-large" onclick="app.showSettings()">
+
+                    <button class="btn btn-tertiary btn-large start-menu-settings-btn" onclick="app.showSettings()">
                         ⚙️ Einstellungen
                     </button>
                 </div>
@@ -151,11 +153,6 @@
             <div class="quiz-wall-container">
                 <div class="quiz-header">
                     <h2 id="quizTitleDisplay">Quiz Wall</h2>
-                    <div class="ranking-link">
-                        <button class="btn btn-small btn-tertiary" onclick="app.saveCurrentGame()">💾 Spielstand speichern</button>
-                        <button class="btn btn-small" onclick="app.goToStartMenu()">🏠 Hauptmenü</button>
-                        <button id="resetGameButton" class="btn btn-small btn-danger">🔄 Spielstand zurücksetzen</button>
-                    </div>
                 </div>
                 <div class="quiz-main-content">
                   <div style="flex: 1; display: flex; flex-direction: column; gap: 0;">
@@ -167,6 +164,11 @@
                         <h3>Ranking</h3>
                         <div id="sidebarRankingList" class="ranking-list"></div>
                     </div>
+                                        <div class="quiz-sidebar-actions">
+                                                <button class="btn btn-small btn-tertiary" onclick="app.saveCurrentGame()">💾 Spielstand speichern</button>
+                                                <button class="btn btn-small" onclick="app.goToStartMenu()">🏠 Hauptmenü</button>
+                                                <button id="resetGameButton" class="btn btn-small btn-danger">🔄 Spielstand zurücksetzen</button>
+                                        </div>
                   </div>
                 </div>
             </div>

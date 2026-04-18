@@ -60,34 +60,32 @@ const app = {
         },
 
         showQuestionModal(questionText, onNext) {
-            this.createSimpleModal('Frage', questionText, 'Weiter', onNext);
+            this.createSimpleModal('Frage', questionText, 'Weiter', onNext, { layout: 'qa' });
         },
 
         showAnswerModal(answerText, onNext) {
             // Modal mit Antworttext, Team-Auswahl und Weiter-Button
-            const modal = this.createModal('Antwort');
+            const modal = this.createModal('Antwort', { layout: 'qa' });
+            const body = document.createElement('div');
+            body.className = 'qa-modal-body';
+
             const content = document.createElement('div');
             content.className = 'answer-text';
             content.textContent = answerText;
-            modal.content.appendChild(content);
+            body.appendChild(content);
+
             // Team-Auswahl direkt darunter
             const info = document.createElement('div');
+            info.className = 'qa-modal-info';
             info.textContent = 'Welche Teams haben richtig geantwortet?';
-            info.style.fontSize = '1.3rem';
-            info.style.margin = '1.2rem 0 0.5rem 0';
-            modal.content.appendChild(info);
+            body.appendChild(info);
+
             const teamList = document.createElement('div');
-            teamList.style.display = 'flex';
-            teamList.style.flexDirection = 'column';
-            teamList.style.gap = '0.7rem';
-            teamList.style.marginBottom = '1.5rem';
+            teamList.className = 'qa-team-list';
             const selectedTeams = new Set();
             this.state.game.teams.forEach(team => {
                 const label = document.createElement('label');
-                label.style.display = 'flex';
-                label.style.alignItems = 'center';
-                label.style.gap = '0.7rem';
-                label.style.fontSize = '1.3rem';
+                label.className = 'qa-team-row';
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.value = team.id;
@@ -99,12 +97,15 @@ const app = {
                 label.appendChild(document.createTextNode(team.name));
                 teamList.appendChild(label);
             });
-            modal.content.appendChild(teamList);
+            body.appendChild(teamList);
+            modal.content.appendChild(body);
+
             // Weiter-Button
+            const actions = document.createElement('div');
+            actions.className = 'qa-modal-actions';
+
             const btn = document.createElement('button');
             btn.className = 'btn btn-primary';
-            btn.style.fontSize = '1.4rem';
-            btn.style.marginTop = '1.2rem';
             btn.textContent = 'Weiter';
             btn.onclick = () => {
                 this.state.game.teams.forEach(team => {
@@ -117,7 +118,8 @@ const app = {
                 modal.close();
                 if (onNext) onNext();
             };
-            modal.content.appendChild(btn);
+            actions.appendChild(btn);
+            modal.content.appendChild(actions);
         },
 
         showTeamSelectModal(qId, points, onNext) {
@@ -165,7 +167,10 @@ const app = {
         },
 
         showRankingModal(onNext) {
-            const modal = this.createModal('Aktuelles Ranking');
+            const modal = this.createModal('Aktuelles Ranking', { layout: 'qa' });
+            const body = document.createElement('div');
+            body.className = 'qa-modal-body';
+
             const sorted = [...this.state.game.teams].sort((a, b) => b.score - a.score);
             const list = document.createElement('div');
             list.className = 'ranking-list';
@@ -175,7 +180,12 @@ const app = {
                 li.innerHTML = `<span>${idx+1}. ${t.name}</span><strong>${t.score}</strong>`;
                 list.appendChild(li);
             });
-            modal.content.appendChild(list);
+
+            body.appendChild(list);
+            modal.content.appendChild(body);
+
+            const actions = document.createElement('div');
+            actions.className = 'qa-modal-actions';
             const btn = document.createElement('button');
             btn.className = 'btn btn-primary';
             btn.textContent = 'Weiter';
@@ -183,15 +193,40 @@ const app = {
                 modal.close();
                 if (onNext) onNext();
             };
-            modal.content.appendChild(btn);
+
+            actions.appendChild(btn);
+            modal.content.appendChild(actions);
         },
 
-        createSimpleModal(title, text, buttonText, onNext) {
-            const modal = this.createModal(title);
+        createSimpleModal(title, text, buttonText, onNext, options = {}) {
+            const modal = this.createModal(title, options);
+
+            if (options.layout === 'qa') {
+                const body = document.createElement('div');
+                body.className = 'qa-modal-body';
+
+                const content = document.createElement('div');
+                content.className = 'question-text';
+                content.textContent = text;
+                body.appendChild(content);
+                modal.content.appendChild(body);
+
+                const actions = document.createElement('div');
+                actions.className = 'qa-modal-actions';
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-primary';
+                btn.textContent = buttonText;
+                btn.onclick = () => { modal.close(); if (onNext) onNext(); };
+                actions.appendChild(btn);
+                modal.content.appendChild(actions);
+                return;
+            }
+
             const content = document.createElement('div');
             content.style.margin = '1.5rem 0';
             content.textContent = text;
             modal.content.appendChild(content);
+
             const btn = document.createElement('button');
             btn.className = 'btn btn-primary';
             btn.textContent = buttonText;
@@ -199,10 +234,13 @@ const app = {
             modal.content.appendChild(btn);
         },
 
-        createModal(title) {
+        createModal(title, options = {}) {
             document.querySelectorAll('.custom-modal').forEach(m => m.remove());
             const modalBg = document.createElement('div');
             modalBg.className = 'custom-modal';
+            if (options.layout === 'qa') {
+                modalBg.classList.add('custom-modal-qa');
+            }
             modalBg.style.position = 'fixed';
             modalBg.style.top = '0';
             modalBg.style.left = '0';
@@ -214,17 +252,38 @@ const app = {
             modalBg.style.justifyContent = 'center';
             modalBg.style.zIndex = '9999';
             const modal = document.createElement('div');
+            if (options.layout === 'qa') {
+                modal.classList.add('custom-modal-card-qa');
+            }
             modal.style.background = '#fff';
             modal.style.padding = '2rem';
             modal.style.borderRadius = '1rem';
             modal.style.maxWidth = '500px';
             modal.style.width = '90vw';
             modal.style.boxShadow = '0 10px 40px rgba(0,0,0,0.25)';
+
+            if (options.layout === 'qa') {
+                modal.style.width = '80vw';
+                modal.style.height = '80vh';
+                modal.style.maxWidth = 'none';
+                modal.style.maxHeight = 'none';
+                modal.style.display = 'flex';
+                modal.style.flexDirection = 'column';
+                modal.style.overflow = 'hidden';
+            }
+
             const h2 = document.createElement('h2');
             h2.textContent = title;
             h2.style.color = 'var(--primary-color)';
             modal.appendChild(h2);
             const content = document.createElement('div');
+            if (options.layout === 'qa') {
+                content.classList.add('custom-modal-content-qa');
+                content.style.display = 'flex';
+                content.style.flexDirection = 'column';
+                content.style.flex = '1';
+                content.style.minHeight = '0';
+            }
             modal.appendChild(content);
             modalBg.appendChild(modal);
             document.body.appendChild(modalBg);
