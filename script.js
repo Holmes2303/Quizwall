@@ -438,10 +438,26 @@ const app = {
             || window.matchMedia('(hover: none) and (pointer: coarse)').matches;
     },
 
+    updateLayoutModeClasses() {
+        const root = document.documentElement;
+        const isCompact = this.isCompactLayout();
+        const isTouch = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+        const isLandscape = window.matchMedia('(orientation: landscape)').matches;
+
+        root.classList.toggle('layout-compact', isCompact);
+        root.classList.toggle('layout-desktop', !isCompact);
+        root.classList.toggle('input-touch', isTouch);
+        root.classList.toggle('input-fine', !isTouch);
+        root.classList.toggle('viewport-landscape', isLandscape);
+        root.classList.toggle('viewport-portrait', !isLandscape);
+    },
+
     updateQuizWallResponsiveUi() {
         const sidebar = document.getElementById('quizSidebar');
         const fabStack = document.querySelector('.mobile-fab-stack');
         const isCompact = this.isCompactLayout();
+
+        this.updateLayoutModeClasses();
 
         if (sidebar) {
             sidebar.classList.toggle('mobile-hidden', isCompact);
