@@ -997,8 +997,14 @@ html.layout-desktop .quiz-sidebar {
 }
 
 .quiz-card:hover:not(.disabled) {
-    transform: scale(1.05);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    transform: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .quiz-card:hover:not(.disabled) {
+        transform: scale(1.05);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    }
 }
 
 .quiz-card:active:not(.disabled) {
