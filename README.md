@@ -1,178 +1,42 @@
 # Quiz Wall
 
-Interaktive Jeopardy-Quiz-App (Vanilla HTML, CSS, JavaScript) mit Editor, Spielstand-Verwaltung und KI-Import-Workflow.
+Interaktive Jeopardy-Quiz-App (Vanilla HTML/CSS/JavaScript) mit Editor, Spielstandverwaltung, KI-Import-Workflow und starkem Mobile-/Tablet-Fokus.
 
-## Aktueller Funktionsumfang
+Aktueller UI-Stand: Version `0.9d`.
 
-- Quiz laden, bearbeiten und spielen in einer Single-Page-App
-- Strikte Trennung von:
-  - Quiz-Dateien (`.quiz.json`)
-  - Spielstand-Dateien (`.game.json`)
-- Team-Setup vor Spielstart (2-4 Teams, frei benennbar)
-- Spielstatus im Startmenue mit aktiviert/deaktiviertem Button-Status
-- In-App-Editor fuer Kategorien und Fragen
-- Gefuehrter Fragenablauf im Vollbild-Modal:
-  - Frage anzeigen
-  - Antwort anzeigen
-  - Teams markieren, die richtig lagen
-  - Ranking anzeigen
-- Live-Ranking in der Sidebar der Quizwand
-- Persistenz via `localStorage`
-- Farbschema-Einstellungen (Primaer-, Hintergrund-, Textfarbe)
-- KI-Import-Flow mit Prompt-Generator und JSON-Parser
+## Highlights
 
-## Neuerungen (Version 0.9)
+- Single-Page-App ohne Build-Tool, komplett clientseitig
+- Trennung von Quiz (`.quiz.json`) und Spielstand (`.game.json`)
+- Team-Setup vor Spielstart (2-4 Teams)
+- In-App-Editor fuer Kategorien/Fragen inkl. globaler Punktestufenpflege
+- Gefuehrter Frage-/Antwort-Flow mit Ranking-Update
+- Manuelle Punktekorrektur pro Team (`Punkte anpassen`)
+- CI-Einstellungen (Name, Logo, Farben, Farbsets)
+- KI-Import mit Prompt-Generator und robustem JSON-Import
+- PWA-Basis (Manifest, Service Worker, Icons)
 
-### 1) KI-Quiz-Import
+## Schnellstart
 
-Im Startmenue steht `🤖 KI-Quiz importieren` zur Verfuegung.
+1. `index.html` lokal oeffnen **oder** lokalen Webserver starten:
 
-Der Flow umfasst:
+```bash
+python3 -m http.server 8000
+```
 
-- Wahl der Quiz-Basis:
-  - Freies Thema (`Thema` + `Zielgruppe`)
-  - Konkretes Material (mit Materialhinweisen)
-- Limit fuer maximale Fragenanzahl (4-60)
-- Kategorien-Modus:
-  - Automatisch durch KI
-  - Vorgegebene Kategorien (kommasepariert)
-- Feld fuer besondere Wuensche
-- Generierter Prompt zum Kopieren in externe KI
-- Import einer KI-Antwort als JSON oder JSON-Codeblock
-
-Beim Import wird die Struktur validiert und normalisiert. Ungueltige/unsaubere Antworten werden abgefangen.
-
-### 2) Getrennte Datei-Typen fuer Quiz und Spielstand
-
-- Quiz-Export: `*.quiz.json`
-- Spielstand-Export: `*.game.json`
-
-Beide Exporte fragen einen Dateinamen ab und erzwingen die korrekte Endung.
-
-### 3) Spielstand mit eingebetteten Quizdaten
-
-Gespeicherte Spielstaende enthalten auch die Kategorien. Dadurch ist ein Spielstand eigenstaendig ladbar, ohne separates Quiz-File.
-
-### 4) Team-Setup als eigener Schritt
-
-Nach `Neues Spiel` erfolgt ein Team-Setup mit:
-
-- Anzahl Teams (2-4)
-- Teamnamen-Eingabe
-- Direkter Spielstart auf die Quizwand
-
-### 5) Verbesserter Fragen- und Punkte-Flow
-
-Klick auf Karten startet einen 4-Schritt-Ablauf:
-
-1. Frage anzeigen
-2. Antwort anzeigen
-3. Richtige Teams auswaehlen (Checkboxen)
-4. Ranking anzeigen
-
-Danach wird die Frage als gespielt markiert und die Quizwand aktualisiert.
-
-### 6) Sicheres Zuruecksetzen mit Bestaetigungen
-
-- `Spielstand zuruecksetzen` (Teams/Score/Fortschritt)
-- `Quiz neu erstellen` mit Optionen, vor dem Verwerfen zu speichern
-- Bestaetigungsdialoge bei riskanten Aktionen
-
-### 7) Dynamische Kategorie-Header
-
-- Kategorienamen werden auf max. 3 Zeilen begrenzt
-- Lange Namen werden gekuerzt
-- Schriftgroesse passt sich automatisch an die Kachelbreite an
-
-### 8) Mobile-First Quizwand und Floating Actions
-
-- Quizwand wurde fuer kleine Displays und Touchgeraete ueberarbeitet
-- Zwei mobile Floating-Buttons auf der Quizwand:
-  - `🏆` fuer Ranking
-  - `🏠` fuer Hauptmenue
-- Sidebar-Ranking wird auf kompakten Layouts ausgeblendet, um Platz fuer die Quizkacheln zu schaffen
-- Header-Kacheln und Fragekacheln bleiben auch mobil spaltenweise deckungsgleich
-
-### 9) Verbesserte Darstellung in Hoch- und Querformat
-
-- Eigene Anpassungen fuer Portrait und Landscape auf Smartphones
-- Typografie und Kachelgroessen skalieren je nach verfuegbarer Hoehe/Breite
-- Quizwand nutzt den verfuegbaren Screen in mobilen Szenarien deutlich besser aus
-
-### 10) Adaptive Mobile-Modals fuer Frage, Antwort und Ranking
-
-- Frage-, Antwort- und Ranking-Modal wurden fuer Mobilansichten dynamisch optimiert
-- Schriftgroesse und Abstaende orientieren sich an der verfuegbaren Bildschirmhoehe
-- Ziel: moeglichst viel Inhalt ohne Scrollen bei weiterhin guter Lesbarkeit
-- Bei sehr knapper Hoehe kann die Ueberschrift in den mobilen Modals automatisch ausgeblendet werden
-
-### 11) Antwort-Modal mit besserer Informations-Hierarchie
-
-- Antwortbereich bleibt oben im Modal
-- Team-Auswahlblock (`Welche Teams haben richtig geantwortet?`) ist im unteren Bereich verankert
-- Teamliste ist ausrichtungsabhaengig:
-  - Hochformat: untereinander
-  - Querformat: nebeneinander
-  - Bei 6+ Teams im Querformat automatisch 3 Spalten
-
-### 12) Startmenue-Scrollverhalten korrigiert
-
-- Das Startmenue ist so angepasst, dass Ueberschriften und oberer Bereich auch auf kleinen Displays vollstaendig erreichbar bleiben
-- Vertikale Positionierung/Scrollbarkeit wurden entsprechend ueberarbeitet
-
-### 13) Mobile Editor-Usability deutlich verbessert
-
-- Kategorienliste im Editor ist auf Mobilgeraeten sauber erreichbar/scrollbar
-- Alle Fragen-Akkordeons starten beim Oeffnen des Editors eingeklappt
-- Spezielle Mobile-Landscape-Variante fuer Editor-Aktionen:
-  - `+ Kategorie` als runder `+`-Button
-  - `Spiel starten`, `Quiz speichern`, `Hauptmenue` als rechtsbuendige Floating-Buttons mit Symbolen
-
-### 14) Robusteres Responsiv-Verhalten zwischen echten Geraeten
-
-- Zentrale Layout-Erkennung im JavaScript (u. a. kompakt/desktop, touch/fine, portrait/landscape)
-- CSS reagiert zusaetzlich auf diese Klassen, nicht nur auf statische Media-Queries
-- Ergebnis: konsistentere Darstellung zwischen DevTools-Emulation und echten Geraeten
-
-### 15) iPad-spezifische Quizwand-Fixes
-
-- Touch-Tablet-Breakpoints verhindern Kachel-Ueberlagerungen auf der Quizwand
-- Kartenhoehen fuellen kontrolliert die Grid-Zellen statt diese zu sprengen
-- Hover-bedingte Skalierung ist auf Touch-Geraeten deaktiviert (verhindert "haengende" Hover-Zustaende)
-
-### 16) Verbesserte Mobile-Querformat-Nutzung
-
-- Fuer kleine Touch-Landscape-Viewports kann die Quizwand minimal scrollen
-- Dadurch lassen sich Browserleisten ausblenden und mehr Nutzflaeche gewinnen
-
-### 17) PWA-Basis integriert (safe minimal)
-
-- Web App Manifest (`manifest.webmanifest`) hinzugefuegt
-- iOS/Standalone-Metatags in `index.html` gesetzt
-- Service Worker (`sw.js`) registriert
-- Ziel: bessere Installierbarkeit und app-aehnliches Startverhalten ohne den weiteren Feature-Ausbau zu blockieren
-
-### 18) PWA-Startzeit und Icons optimiert
-
-- Service Worker auf leichtere Cache-Strategie umgestellt:
-  - HTML: `network-first`
-  - Assets: `stale-while-revalidate`
-- Eigene Icon-Dateien erzeugt statt eines einzigen Quellbildes:
-  - `icons/icon-192.png`
-  - `icons/icon-512.png`
-  - `icons/apple-touch-icon.png`
-- Logo wird im quadratischen Icon vollstaendig dargestellt (mit weissen Flaechen statt Beschnitt)
+2. Im Browser aufrufen: `http://localhost:8000`
+3. Im Hauptmenue `🎮 Neues Spiel` waehlen oder ein Quiz laden.
 
 ## Bedienung
 
-## Startmenue
+### Hauptmenue
 
-### Hauptaktionen
+#### Hauptaktionen
 
-- `🎮 Neues Spiel` (nur wenn ein Quiz geladen ist)
-- `▶️ Spiel fortsetzen` (nur wenn ein Spielstand vorhanden ist)
+- `🎮 Neues Spiel`
+- `▶️ Spiel fortsetzen`
 
-### Quiz verwalten
+#### Quiz verwalten
 
 - `🆕 Quiz neu erstellen`
 - `✏️ Editor oeffnen`
@@ -181,35 +45,77 @@ Danach wird die Frage als gespielt markiert und die Quizwand aktualisiert.
 - `🎯 Demo-Quiz laden`
 - `🤖 KI-Quiz importieren`
 
-### Spiel verwalten
+#### Spiel verwalten
 
 - `💾 Spielstand speichern`
 - `📂 Spielstand laden`
 - `🔄 Spielstand zuruecksetzen`
 
-### Weitere Aktion
+#### Weitere Bereiche
 
 - `⚙️ Einstellungen`
+- `❓ Hilfe & Anleitung`
 
-## Editor
+### Spielablauf
 
-### Moeglichkeiten
+1. Frage auf der Quiz-Wall antippen.
+2. Frage-Modal lesen, dann `Weiter`.
+3. Antwort-Modal: korrekte Teams markieren oder Punkte manuell korrigieren.
+4. Ranking wird aktualisiert.
 
-- Quiz-Titel bearbeiten
-- Kategorien anlegen
-- Pro Kategorie Fragen bearbeiten:
-  - Punkte
-  - Frage
-  - Antwort
-- Spiel aus dem Editor starten
+#### Punkte manuell korrigieren
 
-Hinweis: Fuer den Start sind mindestens 2 Kategorien erforderlich.
+Im Ranking kann pro Team mit `✏️` die Karte `Punkte anpassen` geoeffnet werden:
+
+- Modus `Gutschrift` / `Abzug`
+- Punkte-Chips mehrfach nutzbar (aufsummierend)
+- `Zuruecksetzen`, `Anwenden`, `Abbrechen`
+
+### Editor
+
+- Quiz-Titel pflegen
+- Kategorien anlegen/bearbeiten/entfernen
+- Fragen und Antworten pro Kategorie bearbeiten
+- Globale Punktestufen:
+  - einzelne Stufe bearbeiten
+  - `+ Stufe` / `- Stufe`
+  - `Zuruecksetzen` auf Jeopardy-Standard (100-500) mit Warnhinweis
+
+## Einstellungen (CI)
+
+- Name und Logo
+- Farben 1-4 und Hintergrund
+- Kacheltext-Modus (hell/dunkel)
+- Farbset laden/speichern/zuruecksetzen
+- Uebernahme per `Anwenden`, Verwerfen per `Abbrechen`
+
+## KI-Import
+
+- Prompt-basierter Workflow fuer externe KI
+- Import von JSON oder JSON-Codeblock
+- Strukturvalidierung + Normalisierung
+- Hinweisdialog bei potentiell destruktiven Ueberschreibungen
+
+## Mobile/Responsive Verhalten
+
+- Optimierte Layouts fuer Hoch-/Querformat
+- Quiz-Wall auf kleinen Touchgeraeten scrollbar, damit Browserleisten ausblendbar sind
+- Mobile Floating-Buttons auf der Quiz-Wall:
+  - `🏆` Ranking
+  - `🏠` Hauptmenue
+- Modals fuer Frage/Antwort/Ranking/Score-Adjust mit Safe-Viewport-Regeln
+
+## PWA
+
+- `manifest.webmanifest`
+- Service Worker (`sw.js`) mit:
+  - HTML `network-first`
+  - Assets `stale-while-revalidate`
+- Icons in `icons/` (`192`, `512`, `apple-touch-icon`)
 
 ## Dateiformate
 
 ### Quiz-Datei (`.quiz.json`)
-
-Beispiel:
 
 ```json
 {
@@ -236,20 +142,21 @@ Beispiel:
 
 ### Spielstand-Datei (`.game.json`)
 
-Beispiel:
-
 ```json
 {
   "game": {
-    "teams": [
-      { "id": 0, "name": "Team 1", "score": 200 }
-    ],
+    "teams": [{ "id": 0, "name": "Team 1", "score": 200 }],
     "categories": [
       {
         "id": 0,
         "name": "Kategorie 1",
         "questions": [
-          { "id": "q-0-0", "points": 100, "question": "Frage?", "answer": "Antwort" }
+          {
+            "id": "q-0-0",
+            "points": 100,
+            "question": "Frage?",
+            "answer": "Antwort"
+          }
         ]
       }
     ]
@@ -259,14 +166,16 @@ Beispiel:
 }
 ```
 
+### Farbset-Datei (`.colorset.json`)
+
+Enthaelt Theme-Farben und optional Branding-Daten (Name/Logo).
+
 ## Persistenz
 
-Die App nutzt `localStorage`.
+Die App speichert lokal im Browser (`localStorage`), u. a.:
 
-- `quizwall_game`: Aktueller Spielzustand inkl. Quizdaten und gespielten Fragen
-- `quiz_primary`: Benutzerfarbe primaer
-- `quiz_bg`: Benutzerfarbe Hintergrund
-- `quiz_text`: Benutzerfarbe Text
+- Spielzustand inkl. Teams, Kategorien, gespielte Fragen
+- Theme-/Branding-Einstellungen
 
 ## Projektstruktur
 
@@ -275,34 +184,45 @@ Die App nutzt `localStorage`.
 ├── index.html
 ├── style.css
 ├── script.js
+├── default-quiz-data.js
+├── sample-quiz.json
 ├── manifest.webmanifest
 ├── sw.js
 ├── icons/
 │   ├── icon-192.png
 │   ├── icon-512.png
 │   └── apple-touch-icon.png
-├── default-quiz-data.js
-├── sample-quiz.json
 ├── QUICKSTART.md
 └── README.md
 ```
 
-## Entwicklung
+## Entwicklung / Deployment
 
-Keine Build-Tools erforderlich.
-
-1. Repository klonen
-2. `index.html` im Browser oeffnen
-3. Optional ueber GitHub Pages deployen
+- Keine Build-Pipeline noetig
+- Lokales Hosting per `python3 -m http.server 8000` empfohlen
+- Deployment z. B. via GitHub Pages moeglich
 
 ## Hinweise
 
-- Die App ist clientseitig und funktioniert ohne Backend.
-- JSON-Import erwartet valide Strukturen mit Kategorien und Fragen.
-- Beim KI-Flow werden keine Dateien direkt aus der App an KI-Dienste uebertragen.
-- Mobile Darstellung ist fuer Hoch- und Querformat optimiert; sehr kleine Viewports erhalten zusaetzliche kompakte Regeln.
-- PWA-Verhalten kann auf iOS je nach Cache/App-Icon-Stand ein einmaliges Neu-Hinzufuegen zum Home-Bildschirm erfordern.
+- Rein clientseitig, kein Backend erforderlich
+- Bei ungewoehnlichem Verhalten nach Updates: Seite 1-2x neu laden (Service-Worker-Cache)
+- KI-Daten werden nicht automatisch direkt aus der App an KI-Dienste gesendet; Prompt/Antwort laufen manuell
 
 ## Lizenz
 
-Derzeit keine explizite Lizenzdatei im Repository hinterlegt.
+Im Repository ist aktuell keine separate Lizenzdatei hinterlegt.
+
+## Changelog
+
+### 2026-04-19
+
+- README komplett auf den aktuellen Stand gebracht (Version 0.9d, Features, Bedienung, Mobile, PWA).
+- Hilfe & Anleitung auf Akkordeon-Layout umgestellt und Inhalte aktualisiert.
+- Hilfetext zu Einstellungen inhaltlich angepasst (Animation-Hinweis, Speichern/Laden/Zuruecksetzen).
+- Symbol-Hinweise in der Hilfe ergaenzt (u. a. Punkte anpassen `✏️`, Ranking `🏆`, Hauptmenue `🏠`).
+- Mobile Scroll-Verhalten in mehreren Bereichen verbessert:
+  - Hauptmenue auf kleinen Geraeten
+  - Settings-Screen
+  - Quiz-Wall (Portrait/Scroll-Puffer)
+  - Frage-/Antwort-/Ranking-/Punkte-anpassen-Karten
+- Vollbild-Floating-Button testweise eingebaut und anschliessend vollstaendig wieder entfernt (To-do fuer spaeter).

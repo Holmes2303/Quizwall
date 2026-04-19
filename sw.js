@@ -1,5 +1,5 @@
-const CORE_CACHE = 'quizwall-core-v2';
-const RUNTIME_CACHE = 'quizwall-runtime-v2';
+const CORE_CACHE = 'quizwall-core-v5';
+const RUNTIME_CACHE = 'quizwall-runtime-v5';
 
 // Keep install light for faster first meaningful paint.
 const CORE_ASSETS = [
@@ -9,6 +9,7 @@ const CORE_ASSETS = [
   './script.js',
   './default-quiz-data.js',
   './manifest.webmanifest',
+  './ISG%20Logo.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/apple-touch-icon.png'

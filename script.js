@@ -1,4 +1,5 @@
 const app = {
+    themeStorageVersion: '2',
     /**
      * Speichert den aktuellen Spielstand als JSON-Datei.
      * Fragt nach Dateinamen (Default-Basisname) und erzwingt .game.json
@@ -12,7 +13,7 @@ const app = {
         const now = new Date();
         const pad = n => n.toString().padStart(2, '0');
         const defaultBase = `quizwall-${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
-        const input = prompt('Dateiname fuer den Spielstand (ohne Endung):', defaultBase);
+        const input = prompt('Dateiname für den Spielstand (ohne Endung):', defaultBase);
         if (input === null) return;
 
         const baseName = (input || defaultBase)
@@ -223,7 +224,7 @@ const app = {
 
         showRankingModal(onNext) {
             if (!this.hasActiveGame()) {
-                this.createSimpleModal('Ranking', 'Kein aktives Spiel vorhanden.', 'Schliessen');
+                this.createSimpleModal('Ranking', 'Kein aktives Spiel vorhanden.', 'Schließen');
                 return;
             }
 
@@ -240,7 +241,34 @@ const app = {
             sorted.forEach((t, idx) => {
                 const li = document.createElement('div');
                 li.className = 'ranking-item';
-                li.innerHTML = `<span>${idx+1}. ${t.name}</span><strong>${t.score}</strong>`;
+
+                const label = document.createElement('span');
+                label.textContent = `${idx + 1}. ${t.name}`;
+
+                const right = document.createElement('div');
+                right.className = 'ranking-item-right';
+
+                const score = document.createElement('strong');
+                score.textContent = `${t.score}`;
+
+                const adjustBtn = document.createElement('button');
+                adjustBtn.type = 'button';
+                adjustBtn.className = 'btn btn-secondary ranking-adjust-btn';
+                adjustBtn.setAttribute('aria-label', `Punkte für ${t.name} anpassen`);
+                adjustBtn.textContent = '✏️';
+                adjustBtn.onclick = (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    this.showTeamScoreAdjustModal(t.id, () => {
+                        modal.close();
+                        this.showRankingModal(onNext);
+                    });
+                };
+
+                right.appendChild(score);
+                right.appendChild(adjustBtn);
+                li.appendChild(label);
+                li.appendChild(right);
                 list.appendChild(li);
             });
 
@@ -251,7 +279,7 @@ const app = {
             actions.className = 'qa-modal-actions';
             const btn = document.createElement('button');
             btn.className = 'btn btn-primary';
-            btn.textContent = typeof onNext === 'function' ? 'Weiter' : 'Schliessen';
+            btn.textContent = typeof onNext === 'function' ? 'Weiter' : 'Schließen';
             btn.onclick = () => {
                 modal.close();
                 if (onNext) onNext();
@@ -259,6 +287,177 @@ const app = {
 
             actions.appendChild(btn);
             modal.content.appendChild(actions);
+        },
+
+        getScoreAdjustmentChipValues() {
+            const categories = Array.isArray(this.state.editor.categories)
+                ? this.state.editor.categories
+                : [];
+
+            const values = [];
+            categories.forEach((category) => {
+                (category?.questions || []).forEach((question) => {
+                    const points = parseInt(question?.points, 10);
+                    if (Number.isInteger(points) && points > 0) {
+                        values.push(points);
+                    }
+                });
+            });
+
+            const uniqueSorted = [...new Set(values)].sort((a, b) => a - b);
+            if (uniqueSorted.length === 0) {
+                return [100, 200, 300, 400, 500];
+            }
+
+            return uniqueSorted.slice(0, 12);
+        },
+
+        showTeamScoreAdjustModal(teamId, onApplied) {
+            if (!this.hasActiveGame()) return;
+
+            const team = this.state.game.teams.find((candidate) => candidate.id === teamId);
+            if (!team) return;
+
+            const modal = this.createModal(`Punkte anpassen: ${team.name}`, { layout: 'qa' });
+            const modalRoot = modal.content.closest('.custom-modal');
+            modalRoot?.classList.add('custom-modal-score-adjust');
+
+            const chipValues = this.getScoreAdjustmentChipValues();
+            let mode = 1;
+            let delta = 0;
+            let activeChip = null;
+
+            const body = document.createElement('div');
+            body.className = 'qa-modal-body';
+
+            const info = document.createElement('div');
+            info.className = 'qa-modal-info';
+            info.textContent = 'Richtung wählen und dann Punkte-Chips antippen. Mehrfach tippen summiert.';
+            body.appendChild(info);
+
+            const modeToggle = document.createElement('div');
+            modeToggle.className = 'score-adjust-mode-toggle';
+
+            const plusBtn = document.createElement('button');
+            plusBtn.type = 'button';
+            plusBtn.className = 'btn btn-primary';
+            plusBtn.textContent = 'Gutschrift';
+
+            const minusBtn = document.createElement('button');
+            minusBtn.type = 'button';
+            minusBtn.className = 'btn btn-secondary';
+            minusBtn.textContent = 'Abzug';
+
+            const scorePreview = document.createElement('div');
+            scorePreview.className = 'score-adjust-current';
+
+            const chips = document.createElement('div');
+            chips.className = 'score-adjust-chip-grid';
+
+            const renderMode = () => {
+                plusBtn.classList.toggle('btn-primary', mode === 1);
+                plusBtn.classList.toggle('btn-secondary', mode !== 1);
+                minusBtn.classList.toggle('btn-primary', mode === -1);
+                minusBtn.classList.toggle('btn-secondary', mode !== -1);
+                plusBtn.classList.toggle('is-active', mode === 1);
+                minusBtn.classList.toggle('is-active', mode === -1);
+            };
+
+            const renderCurrent = () => {
+                const nextScore = Math.max(0, team.score + delta);
+                scorePreview.textContent = `Punktestand: ${team.score} → ${nextScore}`;
+            };
+
+            plusBtn.onclick = () => {
+                mode = 1;
+                renderMode();
+            };
+
+            minusBtn.onclick = () => {
+                mode = -1;
+                renderMode();
+            };
+
+            chipValues.forEach((value) => {
+                const chip = document.createElement('button');
+                chip.type = 'button';
+                chip.className = 'btn btn-secondary score-adjust-chip';
+                chip.textContent = `${value}`;
+                chip.onclick = () => {
+                    if (activeChip) {
+                        activeChip.classList.remove('is-active');
+                        activeChip.classList.remove('btn-primary');
+                        activeChip.classList.add('btn-secondary');
+                    }
+                    activeChip = chip;
+                    activeChip.classList.add('is-active');
+                    activeChip.classList.remove('btn-secondary');
+                    activeChip.classList.add('btn-primary');
+                    delta += mode * value;
+                    renderCurrent();
+                };
+                chips.appendChild(chip);
+            });
+
+            modeToggle.appendChild(plusBtn);
+            modeToggle.appendChild(minusBtn);
+            body.appendChild(modeToggle);
+            body.appendChild(chips);
+            body.appendChild(scorePreview);
+
+            const resetBtn = document.createElement('button');
+            resetBtn.type = 'button';
+            resetBtn.className = 'btn btn-tertiary score-adjust-reset';
+            resetBtn.textContent = 'Zurücksetzen';
+            resetBtn.onclick = () => {
+                delta = 0;
+                if (activeChip) {
+                    activeChip.classList.remove('is-active');
+                    activeChip.classList.remove('btn-primary');
+                    activeChip.classList.add('btn-secondary');
+                    activeChip = null;
+                }
+                renderCurrent();
+            };
+
+            body.appendChild(resetBtn);
+            modal.content.appendChild(body);
+
+            const actions = document.createElement('div');
+            actions.className = 'qa-modal-actions';
+
+            const applyBtn = document.createElement('button');
+            applyBtn.type = 'button';
+            applyBtn.className = 'btn btn-primary';
+            applyBtn.textContent = 'Anwenden';
+            applyBtn.onclick = () => {
+                if (delta === 0) {
+                    this.createSimpleModal('Hinweis', 'Bitte erst eine Punkte-Änderung wählen.', 'OK');
+                    return;
+                }
+
+                team.score = Math.max(0, team.score + delta);
+                this.saveGameState();
+                this.updateRanking();
+                modal.close();
+
+                if (typeof onApplied === 'function') {
+                    onApplied(team, delta);
+                }
+            };
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.type = 'button';
+            cancelBtn.className = 'btn btn-secondary';
+            cancelBtn.textContent = 'Abbrechen';
+            cancelBtn.onclick = () => modal.close();
+
+            actions.appendChild(applyBtn);
+            actions.appendChild(cancelBtn);
+            modal.content.appendChild(actions);
+
+            renderMode();
+            renderCurrent();
         },
 
         applyRankingModalSizing(modalRoot, teamCount) {
@@ -427,6 +626,13 @@ const app = {
         },
     state: {
         currentScreenId: 'startMenu',
+        previousScreenId: 'startMenu',
+        settingsReturnScreenId: 'startMenu',
+        settingsSessionSnapshot: null,
+        defaultBrandLogoSrc: null,
+        defaultBrandName: 'ISG Quiz Wall',
+        brandLogoDataUrl: null,
+        brandName: 'ISG Quiz Wall',
         quizTitle: 'Quiz Wall',
         game: null, // Aktives Spiel mit Teams und Fortschritt
         selectedCategoryIndex: null,
@@ -442,6 +648,7 @@ const app = {
     // ============ INITIALISIERUNG ============
     init() {
         console.log("Quiz Wall wird gestartet...");
+        this.initBranding();
         this.loadColorSettings();
         this.loadGameState();
         this.bindStaticUiHandlers();
@@ -537,13 +744,295 @@ const app = {
         if (cancelQuickGame) {
             cancelQuickGame.addEventListener('click', () => this.goToStartMenu());
         }
+
+        const brandNameInput = document.getElementById('brandNameInput');
+        if (brandNameInput) {
+            const update = () => this.previewBrandNameFromInput();
+            brandNameInput.addEventListener('input', update);
+            brandNameInput.addEventListener('change', update);
+        }
+
+        this.bindSettingsPreviewHandlers();
+    },
+
+    bindSettingsPreviewHandlers() {
+        const settingIds = [
+            'primaryColor',
+            'secondaryColor',
+            'tertiaryColor',
+            'quaternaryColor',
+            'backgroundColor',
+            'tileTextMode'
+        ];
+
+        const preview = () => this.previewThemeSettingsFromInputs();
+
+        settingIds.forEach((id) => {
+            const input = document.getElementById(id);
+            if (!input) return;
+            input.addEventListener('input', preview);
+            input.addEventListener('change', preview);
+        });
+    },
+
+    previewThemeSettingsFromInputs() {
+        if (this.state.currentScreenId !== 'settings') {
+            return;
+        }
+        const settings = this.collectThemeSettingsFromInputs();
+        this.applyThemeSettings(settings, { persist: false, updateInputs: false });
+    },
+
+    previewBrandNameFromInput() {
+        if (this.state.currentScreenId !== 'settings') {
+            return;
+        }
+
+        const brandNameInput = document.getElementById('brandNameInput');
+        if (!brandNameInput) return;
+        this.applyBrandName(brandNameInput.value, { persist: false, updateInput: false });
+    },
+
+    showAnimationsComingSoon() {
+        alert('Animationen folgen in einer späteren Version.');
+    },
+
+    initBranding() {
+        const logo = document.querySelector('.brand-badge img');
+        if (!logo) return;
+
+        const nameLabel = document.querySelector('.brand-badge span');
+        if (nameLabel) {
+            const initialName = nameLabel.textContent ? nameLabel.textContent.trim() : '';
+            if (initialName) {
+                this.state.defaultBrandName = initialName;
+            }
+        }
+
+        if (!this.state.defaultBrandLogoSrc) {
+            this.state.defaultBrandLogoSrc = logo.getAttribute('src');
+        }
+
+        const storedLogoData = localStorage.getItem('quiz_brand_logo_data');
+        if (storedLogoData) {
+            this.applyBrandLogo(storedLogoData, { persist: false });
+        } else {
+            this.applyBrandLogo(null, { persist: false });
+        }
+
+        const storedBrandName = localStorage.getItem('quiz_brand_name');
+        this.applyBrandName(storedBrandName || this.state.defaultBrandName, { persist: false, updateInput: true });
+    },
+
+    applyBrandLogo(logoDataUrl, options = {}) {
+        const { persist = false } = options;
+        const logo = document.querySelector('.brand-badge img');
+        if (!logo) return;
+
+        const hasCustomLogo = typeof logoDataUrl === 'string' && logoDataUrl.startsWith('data:image/');
+        const fallbackSrc = this.state.defaultBrandLogoSrc || logo.getAttribute('src');
+        const resolvedSrc = hasCustomLogo ? logoDataUrl : fallbackSrc;
+        logo.src = resolvedSrc;
+
+        const settingsLogoPreview = document.getElementById('settingsLogoPreview');
+        if (settingsLogoPreview) {
+            settingsLogoPreview.src = resolvedSrc;
+        }
+
+        const startMenuBrandLogo = document.getElementById('startMenuBrandLogo');
+        if (startMenuBrandLogo) {
+            startMenuBrandLogo.src = resolvedSrc;
+        }
+
+        this.state.brandLogoDataUrl = hasCustomLogo ? logoDataUrl : null;
+
+        if (persist) {
+            if (this.state.brandLogoDataUrl) {
+                localStorage.setItem('quiz_brand_logo_data', this.state.brandLogoDataUrl);
+            } else {
+                localStorage.removeItem('quiz_brand_logo_data');
+            }
+        }
+    },
+
+    applyBrandName(rawName, options = {}) {
+        const { persist = false, updateInput = true } = options;
+        const badgeLabel = document.querySelector('.brand-badge span');
+        if (!badgeLabel) return;
+
+        const fallbackName = this.state.defaultBrandName || 'ISG Quiz Wall';
+        const cleaned = typeof rawName === 'string' ? rawName.trim() : '';
+        const resolvedName = cleaned || fallbackName;
+
+        badgeLabel.textContent = resolvedName;
+        const startMenuBrandTitle = document.getElementById('startMenuBrandTitle');
+        if (startMenuBrandTitle) {
+            startMenuBrandTitle.textContent = resolvedName;
+        }
+        this.state.brandName = resolvedName;
+
+        if (updateInput) {
+            const brandNameInput = document.getElementById('brandNameInput');
+            if (brandNameInput) {
+                brandNameInput.value = resolvedName;
+            }
+        }
+
+        if (persist) {
+            localStorage.setItem('quiz_brand_name', resolvedName);
+        }
+    },
+
+    getBrandingSettingsSnapshot() {
+        return {
+            logoDataUrl: this.state.brandLogoDataUrl,
+            brandName: this.state.brandName
+        };
+    },
+
+    handleLogoUpload(event) {
+        const file = event.target.files && event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            const result = typeof reader.result === 'string' ? reader.result : null;
+            if (!result) {
+                alert('Logo konnte nicht geladen werden.');
+                return;
+            }
+            this.applyBrandLogo(result, { persist: false });
+            alert('Logo geladen. Mit "Anwenden" speicherst du es dauerhaft.');
+        };
+        reader.onerror = () => {
+            alert('Logo konnte nicht gelesen werden.');
+        };
+        reader.readAsDataURL(file);
+
+        // Erlaubt das erneute Auswählen derselben Datei.
+        event.target.value = '';
+    },
+
+    rgbToHex(r, g, b) {
+        const clamp = (value) => Math.max(0, Math.min(255, value));
+        const toHex = (value) => clamp(value).toString(16).padStart(2, '0');
+        return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
+    },
+
+    async extractPaletteFromLogoDataUrl(logoDataUrl) {
+        if (!logoDataUrl) {
+            throw new Error('Kein Logo verfügbar');
+        }
+
+        const image = new Image();
+        image.decoding = 'async';
+        image.src = logoDataUrl;
+
+        await new Promise((resolve, reject) => {
+            image.onload = resolve;
+            image.onerror = () => reject(new Error('Logo konnte nicht verarbeitet werden'));
+        });
+
+        const canvas = document.createElement('canvas');
+        const size = 64;
+        canvas.width = size;
+        canvas.height = size;
+
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        if (!ctx) {
+            throw new Error('Canvas-Kontext nicht verfügbar');
+        }
+
+        ctx.clearRect(0, 0, size, size);
+        ctx.drawImage(image, 0, 0, size, size);
+
+        const imageData = ctx.getImageData(0, 0, size, size).data;
+        const buckets = new Map();
+
+        for (let i = 0; i < imageData.length; i += 16) {
+            const r = imageData[i];
+            const g = imageData[i + 1];
+            const b = imageData[i + 2];
+            const a = imageData[i + 3];
+
+            if (a < 180) continue;
+
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            const delta = max - min;
+            const saturation = max === 0 ? 0 : delta / max;
+            const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+
+            // Sehr neutrale Pixel und fast weiss/schwarz ausblenden.
+            if (brightness > 245 || brightness < 20 || saturation < 0.08) continue;
+
+            const qr = Math.round(r / 32) * 32;
+            const qg = Math.round(g / 32) * 32;
+            const qb = Math.round(b / 32) * 32;
+            const key = `${qr},${qg},${qb}`;
+            const score = 1 + saturation * 2;
+
+            buckets.set(key, (buckets.get(key) || 0) + score);
+        }
+
+        const ranked = [...buckets.entries()]
+            .sort((a, b) => b[1] - a[1])
+            .map(([key]) => key.split(',').map((value) => parseInt(value, 10)));
+
+        const selected = [];
+        ranked.forEach((rgb) => {
+            if (selected.length >= 6) return;
+            const isDistinct = selected.every((other) => {
+                const dist = Math.sqrt(
+                    Math.pow(rgb[0] - other[0], 2)
+                    + Math.pow(rgb[1] - other[1], 2)
+                    + Math.pow(rgb[2] - other[2], 2)
+                );
+                return dist >= 52;
+            });
+            if (isDistinct) selected.push(rgb);
+        });
+
+        const hexPalette = selected.map((rgb) => this.rgbToHex(rgb[0], rgb[1], rgb[2]));
+        return hexPalette;
+    },
+
+    async applyThemeFromLogo() {
+        try {
+            if (!this.state.brandLogoDataUrl) {
+                alert('Bitte zuerst ein eigenes Logo laden.');
+                return;
+            }
+
+            const palette = await this.extractPaletteFromLogoDataUrl(this.state.brandLogoDataUrl);
+            if (palette.length === 0) {
+                alert('Im Logo konnten keine geeigneten Farben erkannt werden.');
+                return;
+            }
+
+            const current = this.sanitizeThemeSettings(this.collectThemeSettingsFromInputs(), this.getThemeDefaults());
+            const updated = {
+                ...current,
+                color1: palette[0] || current.color1,
+                color2: palette[1] || current.color2,
+                color3: palette[2] || current.color3,
+                color4: palette[3] || current.color4,
+                tileTextMode: this.getDefaultTileTextMode(palette[0] || current.color1)
+            };
+
+            this.applyThemeSettings(updated, { persist: false, updateInputs: true });
+        } catch (error) {
+            alert(`Farben konnten nicht aus dem Logo gelesen werden: ${error.message}`);
+        }
     },
 
     // ============ SCREEN MANAGEMENT ============
     showScreen(screenId) {
+        const previous = this.state.currentScreenId;
         document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
         const target = document.getElementById(screenId);
         if (target) target.classList.remove('hidden');
+        this.state.previousScreenId = previous || 'startMenu';
         this.state.currentScreenId = screenId;
         this.updateQuizWallResponsiveUi();
     },
@@ -665,17 +1154,17 @@ const app = {
             : 'Leite selbst sinnvolle Kategorien aus dem Thema ab.';
 
         const specialInstruction = special
-            ? `Besondere Wuensche: ${special}`
-            : 'Keine besonderen Zusatzwuensche.';
+            ? `Besondere Wünsche: ${special}`
+            : 'Keine besonderen Zusatzwünsche.';
 
         const sourceInstructions = sourceMode === 'material'
             ? [
                 'Quiz-Basis: Konkretes hochgeladenes Material.',
                 'Erstelle Fragen ausschliesslich auf Basis des bereitgestellten Materials.',
-                'WICHTIG: Der Nutzer laedt das Material direkt in der externen KI hoch.',
+                'WICHTIG: Der Nutzer lädt das Material direkt in der externen KI hoch.',
                 materialContext
-                    ? `Material-Hinweise/Inhaltsauszuege: ${materialContext}`
-                    : 'Material-Hinweise/Inhaltsauszuege: keine weiteren Angaben.',
+                    ? `Material-Hinweise/Inhaltsauszüge: ${materialContext}`
+                    : 'Material-Hinweise/Inhaltsauszüge: keine weiteren Angaben.',
                 'Wenn Material unklar ist, treffe keine Faktenannahmen ausserhalb des Materials.'
             ]
             : [
@@ -684,8 +1173,8 @@ const app = {
             ];
 
         return [
-            'Du erstellst ein Quiz fuer eine Jeopardy-Quizwand.',
-            'WICHTIG: Gib AUSSCHLIESSLICH gueltiges JSON zurueck. Kein Text davor oder danach.',
+            'Du erstellst ein Quiz für eine Jeopardy-Quizwand.',
+            'WICHTIG: Gib AUSSCHLIESSLICH gültiges JSON zurück. Kein Text davor oder danach.',
             '',
             ...sourceInstructions,
             `Maximale Gesamtanzahl Fragen: ${maxQuestions}`,
@@ -693,13 +1182,13 @@ const app = {
             specialInstruction,
             '',
             'Anforderungen an die Struktur:',
-            '- Gib ein JSON-Objekt mit den Feldern "quizTitle" und "categories" zurueck.',
+            '- Gib ein JSON-Objekt mit den Feldern "quizTitle" und "categories" zurück.',
             '- "categories" ist ein Array von Kategorien.',
             '- Jede Kategorie hat: "name" (String) und "questions" (Array).',
-            '- Kategorienamen kurz halten: maximal 3 Zeilen à 24 Zeichen (also hoechstens 72 Zeichen pro Kategoriename).',
+            '- Kategorienamen kurz halten: maximal 3 Zeilen à 24 Zeichen (also höchstens 72 Zeichen pro Kategoriename).',
             '- Jede Frage hat: "points" (Integer > 0), "question" (String), "answer" (String).',
             '- Nutze sinnvolle Punktestufen pro Kategorie (z. B. 100,200,300,400,500).',
-            '- Ueberschreite die maximale Gesamtanzahl Fragen nicht.',
+            '- Überschreite die maximale Gesamtanzahl Fragen nicht.',
             '',
             'Beispielformat (Schema):',
             '{',
@@ -744,7 +1233,7 @@ const app = {
     extractJsonFromAiResponse(rawText) {
         const text = (rawText || '').trim();
         if (!text) {
-            throw new Error('Bitte fuege zuerst eine KI-Antwort ein.');
+            throw new Error('Bitte füge zuerst eine KI-Antwort ein.');
         }
 
         const fencedMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
@@ -755,7 +1244,7 @@ const app = {
         const start = text.indexOf('{');
         const end = text.lastIndexOf('}');
         if (start === -1 || end === -1 || end <= start) {
-            throw new Error('Kein gueltiges JSON-Objekt in der KI-Antwort gefunden.');
+            throw new Error('Kein gültiges JSON-Objekt in der KI-Antwort gefunden.');
         }
 
         return text.slice(start, end + 1);
@@ -771,7 +1260,7 @@ const app = {
                     : null));
 
         if (!categoriesSource || categoriesSource.length === 0) {
-            throw new Error('Die KI-Antwort enthaelt keine gueltigen Kategorien.');
+            throw new Error('Die KI-Antwort enthält keine gültigen Kategorien.');
         }
 
         const categories = categoriesSource.map((cat, cIdx) => {
@@ -781,7 +1270,7 @@ const app = {
 
             const sourceQuestions = Array.isArray(cat?.questions) ? cat.questions : [];
             if (sourceQuestions.length === 0) {
-                throw new Error(`Kategorie ${cIdx + 1} enthaelt keine Fragen.`);
+                throw new Error(`Kategorie ${cIdx + 1} enthält keine Fragen.`);
             }
 
             const questions = sourceQuestions.map((q, qIdx) => {
@@ -793,7 +1282,7 @@ const app = {
                 const answer = typeof q?.answer === 'string' ? q.answer.trim() : '';
 
                 if (!question || !answer) {
-                    throw new Error(`Frage ${qIdx + 1} in Kategorie ${cIdx + 1} ist unvollstaendig.`);
+                    throw new Error(`Frage ${qIdx + 1} in Kategorie ${cIdx + 1} ist unvollständig.`);
                 }
 
                 return {
@@ -916,7 +1405,7 @@ const app = {
     showStartNewGameConfirmation(onConfirm) {
         const modal = this.createModal('Neues Spiel starten');
         const text = document.createElement('p');
-        text.textContent = 'Dies loescht den aktuellen Spielstand, okay?';
+        text.textContent = 'Dies löscht den aktuellen Spielstand, okay?';
         text.style.margin = '1rem 0 1.5rem 0';
         modal.content.appendChild(text);
 
@@ -1065,7 +1554,7 @@ const app = {
         const pointsSchema = this.parsePointsSchema(document.getElementById('pointsInput').value);
 
         if (pointsSchema.length === 0) {
-            alert('Bitte ein gueltiges Punkte-Schema eingeben, z. B. 100,200,300,400,500.');
+            alert('Bitte ein gültiges Punkte-Schema eingeben, z. B. 100,200,300,400,500.');
             return;
         }
 
@@ -1135,7 +1624,7 @@ const app = {
         const now = new Date();
         const pad = n => n.toString().padStart(2, '0');
         const defaultBase = `quiz-${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}`;
-        const input = prompt('Dateiname fuer das Quiz (ohne Endung):', defaultBase);
+        const input = prompt('Dateiname für das Quiz (ohne Endung):', defaultBase);
         if (input === null) return;
 
         const baseName = (input || defaultBase)
@@ -1178,7 +1667,7 @@ const app = {
                     : (parsed.game && Array.isArray(parsed.game.categories) ? parsed.game.categories : null);
 
                 if (!categories || categories.length === 0) {
-                    throw new Error('Keine gueltigen Kategorien gefunden.');
+                    throw new Error('Keine gültigen Kategorien gefunden.');
                 }
 
                 this.state.editor.categories = categories;
@@ -1231,11 +1720,11 @@ const app = {
         const text = document.createElement('p');
 
         if (hasQuiz && hasGame) {
-            text.textContent = 'Aktuelles Quiz und Spielstand gehen verloren, wenn du fortfaehrst.';
+            text.textContent = 'Aktuelles Quiz und Spielstand gehen verloren, wenn du fortfährst.';
         } else if (hasQuiz) {
-            text.textContent = 'Das aktuelle Quiz geht verloren, wenn du fortfaehrst.';
+            text.textContent = 'Das aktuelle Quiz geht verloren, wenn du fortfährst.';
         } else {
-            text.textContent = 'Der aktuelle Spielstand geht verloren, wenn du fortfaehrst.';
+            text.textContent = 'Der aktuelle Spielstand geht verloren, wenn du fortfährst.';
         }
 
         text.style.margin = '1rem 0 1.25rem 0';
@@ -1303,7 +1792,7 @@ const app = {
             return;
         }
 
-        if (!confirm('Spiel zuruecksetzen? Teams und Spielstand gehen verloren, das Quiz bleibt erhalten.')) {
+        if (!confirm('Spiel zurücksetzen? Teams und Spielstand gehen verloren, das Quiz bleibt erhalten.')) {
             return;
         }
 
@@ -1314,7 +1803,7 @@ const app = {
         this.saveGameState();
         this.updateQuizInfo();
         this.showScreen('startMenu');
-        alert('Spiel wurde zurueckgesetzt.');
+        alert('Spiel wurde zurückgesetzt.');
     },
 
     // ============ QUIZ BOARD ============
@@ -1406,10 +1895,34 @@ const app = {
         if (list) {
             list.innerHTML = '';
             const sorted = [...this.state.game.teams].sort((a, b) => b.score - a.score);
-            sorted.forEach(t => {
+            sorted.forEach((t, idx) => {
                 const li = document.createElement('div');
                 li.className = 'ranking-item';
-                li.innerHTML = `<span>${t.name}</span><strong>${t.score}</strong>`;
+
+                const label = document.createElement('span');
+                label.textContent = `${idx + 1}. ${t.name}`;
+
+                const right = document.createElement('div');
+                right.className = 'ranking-item-right';
+
+                const score = document.createElement('strong');
+                score.textContent = `${t.score}`;
+
+                const adjustBtn = document.createElement('button');
+                adjustBtn.type = 'button';
+                adjustBtn.className = 'btn btn-secondary ranking-adjust-btn';
+                adjustBtn.setAttribute('aria-label', `Punkte für ${t.name} anpassen`);
+                adjustBtn.textContent = '✏️';
+                adjustBtn.onclick = (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    this.showTeamScoreAdjustModal(t.id);
+                };
+
+                right.appendChild(score);
+                right.appendChild(adjustBtn);
+                li.appendChild(label);
+                li.appendChild(right);
                 list.appendChild(li);
             });
         }
@@ -1418,10 +1931,34 @@ const app = {
         if (sidebar) {
             sidebar.innerHTML = '';
             const sorted = [...this.state.game.teams].sort((a, b) => b.score - a.score);
-            sorted.forEach(t => {
+            sorted.forEach((t, idx) => {
                 const li = document.createElement('div');
                 li.className = 'ranking-item';
-                li.innerHTML = `<span>${t.name}</span><strong>${t.score}</strong>`;
+
+                const label = document.createElement('span');
+                label.textContent = `${idx + 1}. ${t.name}`;
+
+                const right = document.createElement('div');
+                right.className = 'ranking-item-right';
+
+                const score = document.createElement('strong');
+                score.textContent = `${t.score}`;
+
+                const adjustBtn = document.createElement('button');
+                adjustBtn.type = 'button';
+                adjustBtn.className = 'btn btn-secondary ranking-adjust-btn';
+                adjustBtn.setAttribute('aria-label', `Punkte für ${t.name} anpassen`);
+                adjustBtn.textContent = '✏️';
+                adjustBtn.onclick = (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    this.showTeamScoreAdjustModal(t.id);
+                };
+
+                right.appendChild(score);
+                right.appendChild(adjustBtn);
+                li.appendChild(label);
+                li.appendChild(right);
                 sidebar.appendChild(li);
             });
         }
@@ -1440,6 +1977,8 @@ const app = {
         titleInput.oninput = (event) => {
             this.state.quizTitle = event.target.value.trim() || 'Quiz Wall';
         };
+
+        this.renderPointsSchemaControls();
 
         // Kategorien anzeigen
         this.renderCategoryList();
@@ -1496,6 +2035,354 @@ const app = {
         });
     },
 
+    getGlobalPointsSchemaFromCategories() {
+        const categories = Array.isArray(this.state.editor.categories) ? this.state.editor.categories : [];
+        if (categories.length === 0) return [];
+
+        const firstQuestions = Array.isArray(categories[0].questions) ? categories[0].questions : [];
+        const schema = firstQuestions
+            .map((question) => parseInt(question?.points, 10))
+            .filter((points) => Number.isInteger(points) && points > 0);
+
+        return schema;
+    },
+
+    calculateNextPointLevel(schema) {
+        if (!Array.isArray(schema) || schema.length === 0) return 100;
+        if (schema.length === 1) return schema[0] + 100;
+
+        const last = schema[schema.length - 1];
+        const prev = schema[schema.length - 2];
+        const step = Math.max(10, last - prev);
+        return last + step;
+    },
+
+    applyGlobalPointsSchema(schema) {
+        const pointsSchema = Array.isArray(schema)
+            ? schema
+                .map((value) => parseInt(value, 10))
+                .filter((value) => Number.isInteger(value) && value > 0)
+            : [];
+
+        if (pointsSchema.length === 0) {
+            return;
+        }
+
+        this.state.editor.categories.forEach((category, categoryIndex) => {
+            const existingQuestions = Array.isArray(category.questions) ? category.questions : [];
+            category.questions = pointsSchema.map((points, questionIndex) => {
+                const existing = existingQuestions[questionIndex] || {};
+                return {
+                    id: `q-${categoryIndex}-${questionIndex}`,
+                    points,
+                    question: typeof existing.question === 'string' ? existing.question : '',
+                    answer: typeof existing.answer === 'string' ? existing.answer : ''
+                };
+            });
+        });
+
+        const selectedIndex = this.state.selectedCategoryIndex;
+        if (Number.isInteger(selectedIndex) && this.state.editor.categories[selectedIndex]) {
+            this.selectCategory(selectedIndex);
+        } else {
+            this.renderCategoryList();
+        }
+
+        this.renderPointsSchemaControls();
+        this.saveGameState();
+    },
+
+    showPointSchemaChangeConfirmation(nextSchema, actionLabel, options = {}) {
+        const warningText = options.warningText || '';
+        const modal = this.createModal('Punktestufen ändern');
+        const modalRoot = modal.content.closest('.custom-modal');
+        modalRoot?.classList.add('custom-modal-point-schema-confirm');
+        modal.content.classList.add('point-schema-confirm-content');
+
+        const currentSchema = this.getGlobalPointsSchemaFromCategories();
+        const info = document.createElement('p');
+        info.className = 'point-schema-confirm-text';
+        info.innerHTML = `Die Punktestufen werden in <strong>allen Kategorien</strong> ${actionLabel}.`;
+        modal.content.appendChild(info);
+
+        const before = document.createElement('p');
+        before.className = 'point-schema-confirm-text';
+        before.textContent = `Vorher: ${currentSchema.join(', ')}`;
+        modal.content.appendChild(before);
+
+        const after = document.createElement('p');
+        after.className = 'point-schema-confirm-text';
+        after.textContent = `Nachher: ${nextSchema.join(', ')}`;
+        modal.content.appendChild(after);
+
+        if (warningText) {
+            const warning = document.createElement('p');
+            warning.className = 'point-schema-confirm-text point-schema-confirm-warning';
+            warning.textContent = warningText;
+            modal.content.appendChild(warning);
+        }
+
+        const actions = document.createElement('div');
+        actions.className = 'point-schema-confirm-actions';
+
+        const confirmBtn = document.createElement('button');
+        confirmBtn.className = 'btn btn-danger';
+        confirmBtn.textContent = 'Ja, übernehmen';
+        confirmBtn.onclick = () => {
+            this.applyGlobalPointsSchema(nextSchema);
+            modal.close();
+        };
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'btn btn-secondary';
+        cancelBtn.textContent = 'Abbrechen';
+        cancelBtn.onclick = () => modal.close();
+
+        actions.appendChild(confirmBtn);
+        actions.appendChild(cancelBtn);
+        modal.content.appendChild(actions);
+    },
+
+    openPointLevelEditor(levelIndex) {
+        const schema = this.getGlobalPointsSchemaFromCategories();
+        if (!Array.isArray(schema) || schema.length === 0) return;
+
+        let currentIndex = Math.max(0, Math.min(schema.length - 1, levelIndex));
+        const workingSchema = [...schema];
+
+        const modal = this.createModal('Punktestufen bearbeiten');
+        const modalRoot = modal.content.closest('.custom-modal');
+        modalRoot?.classList.add('custom-modal-point-level');
+
+        modal.content.classList.add('points-level-modal-content');
+
+        const info = document.createElement('p');
+        info.style.margin = '0.75rem 0 0.7rem 0';
+        info.textContent = 'Tippe auf die Buttons oder gib den Wert direkt ein. Mit den Pfeilen wechselst du zur vorherigen/nächsten Stufe.';
+        modal.content.appendChild(info);
+
+        const range = document.createElement('p');
+        range.style.margin = '0 0 0.75rem 0';
+        range.style.fontSize = '0.92rem';
+        range.style.color = 'var(--text-light)';
+        modal.content.appendChild(range);
+
+        const preview = document.createElement('div');
+        preview.className = 'points-level-preview';
+        modal.content.appendChild(preview);
+
+        const stepControls = document.createElement('div');
+        stepControls.className = 'points-level-step-controls';
+
+        const stepValues = [-50, -10, 10, 50];
+        stepValues.forEach((step) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn btn-secondary points-level-step-btn';
+            btn.textContent = step > 0 ? `+${step}` : `${step}`;
+            btn.onclick = () => {
+                const { lowerBound, upperBound } = getBoundsForIndex(currentIndex);
+                const nextValue = this.clampPointLevelValue(workingSchema[currentIndex] + step, lowerBound, upperBound);
+                workingSchema[currentIndex] = nextValue;
+                valueInput.value = String(nextValue);
+                renderState();
+            };
+            stepControls.appendChild(btn);
+        });
+
+        modal.content.appendChild(stepControls);
+
+        const valueInput = document.createElement('input');
+        valueInput.type = 'number';
+        valueInput.value = String(workingSchema[currentIndex]);
+        valueInput.className = 'team-name-input points-level-input';
+        valueInput.oninput = () => {
+            const parsed = parseInt(valueInput.value, 10);
+            if (!Number.isInteger(parsed)) return;
+            const { lowerBound, upperBound } = getBoundsForIndex(currentIndex);
+            const nextValue = this.clampPointLevelValue(parsed, lowerBound, upperBound);
+            workingSchema[currentIndex] = nextValue;
+            if (String(nextValue) !== valueInput.value) {
+                valueInput.value = String(nextValue);
+            }
+            renderState();
+        };
+        modal.content.appendChild(valueInput);
+
+        const getBoundsForIndex = (index) => {
+            return {
+                lowerBound: index === 0 ? 1 : (workingSchema[index - 1] + 1),
+                upperBound: index === workingSchema.length - 1 ? null : (workingSchema[index + 1] - 1)
+            };
+        };
+
+        const actions = document.createElement('div');
+        actions.className = 'button-group points-level-actions';
+
+        const previousBtn = document.createElement('button');
+        previousBtn.className = 'btn btn-secondary';
+        previousBtn.textContent = '◀';
+        previousBtn.setAttribute('aria-label', 'Vorherige Stufe');
+        previousBtn.onclick = () => {
+            if (currentIndex <= 0) return;
+            currentIndex -= 1;
+            renderState();
+        };
+
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'btn btn-secondary';
+        nextBtn.textContent = '▶';
+        nextBtn.setAttribute('aria-label', 'Nächste Stufe');
+        nextBtn.onclick = () => {
+            if (currentIndex >= workingSchema.length - 1) return;
+            currentIndex += 1;
+            renderState();
+        };
+
+        const applyBtn = document.createElement('button');
+        applyBtn.className = 'btn btn-primary';
+        applyBtn.textContent = 'Übernehmen';
+        applyBtn.onclick = () => {
+            const hasChanges = workingSchema.some((value, index) => value !== schema[index]);
+            if (!hasChanges) {
+                modal.close();
+                return;
+            }
+
+            this.showPointSchemaChangeConfirmation(workingSchema, 'angepasst');
+            modal.close();
+        };
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'btn btn-secondary';
+        cancelBtn.textContent = 'Abbrechen';
+        cancelBtn.onclick = () => modal.close();
+
+        const renderState = () => {
+            const currentValue = workingSchema[currentIndex];
+            const originalValue = schema[currentIndex];
+            const { lowerBound, upperBound } = getBoundsForIndex(currentIndex);
+            const upperText = upperBound === null ? '∞' : String(upperBound);
+
+            range.textContent = `Stufe ${currentIndex + 1}/${workingSchema.length} · Erlaubter Bereich: ${lowerBound} bis ${upperText}`;
+            preview.textContent = `Vorher: ${originalValue} -> Neu: ${currentValue}`;
+
+            valueInput.min = String(lowerBound);
+            if (upperBound !== null) {
+                valueInput.max = String(upperBound);
+            } else {
+                valueInput.removeAttribute('max');
+            }
+            valueInput.value = String(currentValue);
+
+            previousBtn.disabled = currentIndex === 0;
+            nextBtn.disabled = currentIndex >= workingSchema.length - 1;
+        };
+
+        actions.appendChild(previousBtn);
+        actions.appendChild(nextBtn);
+        actions.appendChild(applyBtn);
+        actions.appendChild(cancelBtn);
+        modal.content.appendChild(actions);
+
+        renderState();
+    },
+
+    clampPointLevelValue(value, minValue, maxValue = null) {
+        let clamped = Math.max(minValue, value);
+        if (maxValue !== null) {
+            clamped = Math.min(maxValue, clamped);
+        }
+        return clamped;
+    },
+
+    renderPointsSchemaControls() {
+        const host = document.getElementById('pointsSchemaEditor');
+        if (!host) return;
+
+        const schema = this.getGlobalPointsSchemaFromCategories();
+        host.innerHTML = '';
+
+        const title = document.createElement('h4');
+        title.textContent = 'Punktestufen';
+        host.appendChild(title);
+
+        const hint = document.createElement('p');
+        hint.className = 'points-schema-empty';
+        hint.textContent = 'Tippe eine Stufe an, um sie zu bearbeiten.';
+        host.appendChild(hint);
+
+        if (schema.length === 0) {
+            const empty = document.createElement('p');
+            empty.className = 'points-schema-empty';
+            empty.textContent = 'Keine Punktestufen vorhanden.';
+            host.appendChild(empty);
+            return;
+        }
+
+        const chips = document.createElement('div');
+        chips.className = 'points-schema-chip-list';
+        schema.forEach((points, idx) => {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'btn btn-tertiary points-schema-chip';
+            chip.textContent = `${points}`;
+            chip.setAttribute('aria-label', `Punktestufe ${points} bearbeiten`);
+            chip.onclick = () => this.openPointLevelEditor(idx);
+            chips.appendChild(chip);
+        });
+        host.appendChild(chips);
+
+        const controls = document.createElement('div');
+        controls.className = 'points-schema-controls';
+
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'btn btn-secondary btn-small points-schema-mini-btn';
+        addBtn.textContent = '+ Stufe';
+        addBtn.onclick = () => {
+            const nextValue = this.calculateNextPointLevel(schema);
+            const nextSchema = [...schema, nextValue];
+            this.showPointSchemaChangeConfirmation(nextSchema, 'erweitert');
+        };
+
+        const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+        removeBtn.className = 'btn btn-secondary btn-small points-schema-mini-btn';
+        removeBtn.textContent = '- Stufe';
+        removeBtn.disabled = schema.length <= 1;
+        removeBtn.onclick = () => {
+            if (schema.length <= 1) return;
+            const nextSchema = schema.slice(0, -1);
+            this.showPointSchemaChangeConfirmation(nextSchema, 'reduziert', {
+                warningText: 'Hinweis: Beim Entfernen einer Stufe wird die letzte Frage jeder Kategorie gelöscht.'
+            });
+        };
+
+        controls.appendChild(addBtn);
+        controls.appendChild(removeBtn);
+        host.appendChild(controls);
+
+        const resetWrap = document.createElement('div');
+        resetWrap.className = 'points-schema-reset-wrap';
+
+        const resetBtn = document.createElement('button');
+        resetBtn.type = 'button';
+        resetBtn.className = 'btn btn-danger btn-small points-schema-reset-btn';
+        resetBtn.textContent = 'Zurücksetzen';
+        resetBtn.onclick = () => this.resetPointsSchemaToJeopardyDefault();
+
+        resetWrap.appendChild(resetBtn);
+        host.appendChild(resetWrap);
+    },
+
+    resetPointsSchemaToJeopardyDefault() {
+        const defaultSchema = [100, 200, 300, 400, 500];
+        this.showPointSchemaChangeConfirmation(defaultSchema, 'auf Jeopardy-Standard zurückgesetzt', {
+            warningText: 'Hinweis: Dadurch werden in allen Kategorien exakt fünf Jeopardy-Stufen gesetzt.'
+        });
+    },
+
     createQuestionEditorItem(category, question, questionIndex) {
         const item = document.createElement('div');
         item.className = 'question-item';
@@ -1523,19 +2410,6 @@ const app = {
         const body = document.createElement('div');
         body.className = 'question-item-body';
 
-        const pointsInput = document.createElement('input');
-        pointsInput.type = 'number';
-        pointsInput.min = '1';
-        pointsInput.value = question.points;
-        pointsInput.placeholder = 'Punkte';
-        pointsInput.oninput = (event) => {
-            const value = parseInt(event.target.value, 10);
-            if (Number.isInteger(value) && value > 0) {
-                question.points = value;
-                heading.textContent = getHeaderText();
-            }
-        };
-
         const questionInput = document.createElement('textarea');
         questionInput.placeholder = 'Frage eingeben';
         questionInput.value = question.question || '';
@@ -1551,7 +2425,6 @@ const app = {
             question.answer = event.target.value;
         };
 
-        body.appendChild(pointsInput);
         body.appendChild(questionInput);
         body.appendChild(answerInput);
         content.appendChild(body);
@@ -1585,7 +2458,7 @@ const app = {
 
         const closeBtn = document.createElement('button');
         closeBtn.className = 'btn btn-secondary';
-        closeBtn.textContent = 'Schliessen';
+        closeBtn.textContent = 'Schließen';
         closeBtn.onclick = () => modal.close();
 
         actions.appendChild(closeBtn);
@@ -1608,35 +2481,394 @@ const app = {
             body.textContent = `README konnte nicht geladen werden: ${error.message}`;
         }
     },
-    showSettings() { this.showScreen('settings'); },
-
-    applyColorSettings() {
-        const p = document.getElementById('primaryColor').value;
-        const b = document.getElementById('backgroundColor').value;
-        const t = document.getElementById('textColor').value;
-        
-        localStorage.setItem('quiz_primary', p);
-        localStorage.setItem('quiz_bg', b);
-        localStorage.setItem('quiz_text', t);
-        
+    showSettings(returnScreenId) {
         this.loadColorSettings();
-        alert("Farben gespeichert!");
+
+        const current = this.state.currentScreenId;
+        const previous = this.state.previousScreenId;
+        const fallbackTarget = (current && current !== 'settings')
+            ? current
+            : ((previous && previous !== 'settings') ? previous : 'startMenu');
+
+        this.state.settingsReturnScreenId = returnScreenId || fallbackTarget;
+        this.state.settingsSessionSnapshot = {
+            theme: this.collectThemeSettingsFromInputs(),
+            branding: this.getBrandingSettingsSnapshot()
+        };
+        this.showScreen('settings');
     },
 
-    loadColorSettings() {
-        const root = document.documentElement;
-        if (localStorage.getItem('quiz_primary')) {
-            root.style.setProperty('--primary-color', localStorage.getItem('quiz_primary'));
-            root.style.setProperty('--background-color', localStorage.getItem('quiz_bg'));
-            root.style.setProperty('--text-color', localStorage.getItem('quiz_text'));
+    closeSettings() {
+        let target = this.state.settingsReturnScreenId;
+        if (!target || target === 'settings') {
+            const previous = this.state.previousScreenId;
+            target = (previous && previous !== 'settings') ? previous : 'startMenu';
+        }
+
+        this.showScreen(target);
+        if (target === 'quizWall') {
+            this.renderQuizBoard();
+            this.updateRanking();
+        } else if (target === 'startMenu') {
+            this.updateQuizInfo();
         }
     },
 
+    parseColorToRgb(colorValue) {
+        if (!colorValue || typeof colorValue !== 'string') return null;
+        const color = colorValue.trim();
+
+        if (/^#([0-9a-f]{3})$/i.test(color)) {
+            const hex = color.slice(1);
+            return {
+                r: parseInt(hex[0] + hex[0], 16),
+                g: parseInt(hex[1] + hex[1], 16),
+                b: parseInt(hex[2] + hex[2], 16)
+            };
+        }
+
+        if (/^#([0-9a-f]{6})$/i.test(color)) {
+            return {
+                r: parseInt(color.slice(1, 3), 16),
+                g: parseInt(color.slice(3, 5), 16),
+                b: parseInt(color.slice(5, 7), 16)
+            };
+        }
+
+        const rgbMatch = color.match(/^rgb\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)\)$/i);
+        if (rgbMatch) {
+            return {
+                r: Math.max(0, Math.min(255, parseInt(rgbMatch[1], 10))),
+                g: Math.max(0, Math.min(255, parseInt(rgbMatch[2], 10))),
+                b: Math.max(0, Math.min(255, parseInt(rgbMatch[3], 10)))
+            };
+        }
+
+        return null;
+    },
+
+    getDefaultTileTextMode(baseColor) {
+        const rgb = this.parseColorToRgb(baseColor);
+        if (!rgb) return 'light';
+
+        const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
+        return brightness >= 160 ? 'dark' : 'light';
+    },
+
+    getReadableTextColor(backgroundColor, darkColor = '#222222', lightColor = '#FFFFFF') {
+        const rgb = this.parseColorToRgb(backgroundColor);
+        if (!rgb) return lightColor;
+
+        const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
+        return brightness >= 187 ? darkColor : lightColor;
+    },
+
+    applyButtonTextColorSettings(settings) {
+        const root = document.documentElement;
+
+        root.style.setProperty('--btn-primary-text-color', this.getReadableTextColor(settings.color1));
+        root.style.setProperty('--btn-secondary-text-color', this.getReadableTextColor(settings.color2));
+        root.style.setProperty('--btn-tertiary-text-color', this.getReadableTextColor(settings.color4));
+        root.style.setProperty('--btn-danger-text-color', this.getReadableTextColor(settings.color3));
+    },
+
+    getRelativeLuminance(colorValue) {
+        const rgb = this.parseColorToRgb(colorValue);
+        if (!rgb) return 0;
+
+        const toLinear = (channel) => {
+            const srgb = channel / 255;
+            return srgb <= 0.03928 ? srgb / 12.92 : Math.pow((srgb + 0.055) / 1.055, 2.4);
+        };
+
+        const r = toLinear(rgb.r);
+        const g = toLinear(rgb.g);
+        const b = toLinear(rgb.b);
+
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    },
+
+    getContrastRatio(colorA, colorB) {
+        const l1 = this.getRelativeLuminance(colorA);
+        const l2 = this.getRelativeLuminance(colorB);
+        const lighter = Math.max(l1, l2);
+        const darker = Math.min(l1, l2);
+        return (lighter + 0.05) / (darker + 0.05);
+    },
+
+    applyPageHeadingColorSettings(settings) {
+        const root = document.documentElement;
+        const candidates = [settings.color1, settings.color2, settings.color3, settings.color4]
+            .filter((color) => this.isHexColor(color));
+
+        const fallback = settings.color1 || '#F7C001';
+        if (candidates.length === 0) {
+            root.style.setProperty('--page-heading-color', fallback);
+            return;
+        }
+
+        let bestColor = candidates[0];
+        let bestContrast = this.getContrastRatio(bestColor, settings.background);
+
+        candidates.forEach((candidate) => {
+            const contrast = this.getContrastRatio(candidate, settings.background);
+            if (contrast > bestContrast) {
+                bestContrast = contrast;
+                bestColor = candidate;
+            }
+        });
+
+        root.style.setProperty('--page-heading-color', bestColor);
+    },
+
+    applyTileTextMode(mode) {
+        const root = document.documentElement;
+        const resolvedMode = mode === 'dark' ? 'dark' : 'light';
+        const tileColor = resolvedMode === 'dark' ? '#222222' : '#FFFFFF';
+        root.style.setProperty('--tile-text-color', tileColor);
+        root.setAttribute('data-tile-text-mode', resolvedMode);
+    },
+
+    isHexColor(value) {
+        return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value.trim());
+    },
+
+    getThemeDefaults() {
+        const primaryInput = document.getElementById('primaryColor');
+        const secondaryInput = document.getElementById('secondaryColor');
+        const tertiaryInput = document.getElementById('tertiaryColor');
+        const quaternaryInput = document.getElementById('quaternaryColor');
+        const backgroundInput = document.getElementById('backgroundColor');
+        const tileTextModeInput = document.getElementById('tileTextMode');
+
+        const defaults = {
+            color1: (primaryInput?.defaultValue || '#F7C001').trim(),
+            color2: (secondaryInput?.defaultValue || '#F18A01').trim(),
+            color3: (tertiaryInput?.defaultValue || '#C83426').trim(),
+            color4: (quaternaryInput?.defaultValue || '#E9ECEF').trim(),
+            background: (backgroundInput?.defaultValue || '#FFFFFF').trim(),
+            tileTextMode: (tileTextModeInput?.value === 'dark' || tileTextModeInput?.defaultValue === 'dark') ? 'dark' : 'light'
+        };
+
+        defaults.tileTextMode = defaults.tileTextMode || this.getDefaultTileTextMode(defaults.color1);
+        return defaults;
+    },
+
+    collectThemeSettingsFromInputs() {
+        return {
+            color1: document.getElementById('primaryColor')?.value,
+            color2: document.getElementById('secondaryColor')?.value,
+            color3: document.getElementById('tertiaryColor')?.value,
+            color4: document.getElementById('quaternaryColor')?.value,
+            background: document.getElementById('backgroundColor')?.value,
+            tileTextMode: document.getElementById('tileTextMode')?.value
+        };
+    },
+
+    sanitizeThemeSettings(rawSettings, fallbackSettings) {
+        const fallback = fallbackSettings || this.getThemeDefaults();
+        const raw = rawSettings || {};
+
+        const color1 = raw.color1 || raw.primaryColor || raw.primary || raw.quiz_color_1;
+        const color2 = raw.color2 || raw.secondaryColor || raw.secondary || raw.quiz_color_2;
+        const color3 = raw.color3 || raw.tertiaryColor || raw.tertiary || raw.quiz_color_3;
+        const color4 = raw.color4 || raw.quaternaryColor || raw.quaternary || raw.quiz_color_4;
+        const background = raw.background || raw.backgroundColor || raw.bg || raw.quiz_color_bg;
+        const tileTextMode = raw.tileTextMode || raw.tile_text_mode || raw.quiz_tile_text_mode;
+
+        const normalized = {
+            color1: this.isHexColor(color1) ? color1 : fallback.color1,
+            color2: this.isHexColor(color2) ? color2 : fallback.color2,
+            color3: this.isHexColor(color3) ? color3 : fallback.color3,
+            color4: this.isHexColor(color4) ? color4 : fallback.color4,
+            background: this.isHexColor(background) ? background : fallback.background,
+            tileTextMode: (tileTextMode === 'dark' || tileTextMode === 'light') ? tileTextMode : fallback.tileTextMode
+        };
+
+        return normalized;
+    },
+
+    setThemeInputs(settings) {
+        const primaryInput = document.getElementById('primaryColor');
+        const secondaryInput = document.getElementById('secondaryColor');
+        const tertiaryInput = document.getElementById('tertiaryColor');
+        const quaternaryInput = document.getElementById('quaternaryColor');
+        const backgroundInput = document.getElementById('backgroundColor');
+        const tileTextModeInput = document.getElementById('tileTextMode');
+
+        if (primaryInput) primaryInput.value = settings.color1;
+        if (secondaryInput) secondaryInput.value = settings.color2;
+        if (tertiaryInput) tertiaryInput.value = settings.color3;
+        if (quaternaryInput) quaternaryInput.value = settings.color4;
+        if (backgroundInput) backgroundInput.value = settings.background;
+        if (tileTextModeInput) tileTextModeInput.value = settings.tileTextMode;
+    },
+
+    applyThemeSettings(rawSettings, options = {}) {
+        const { persist = false, updateInputs = true } = options;
+        const defaults = this.getThemeDefaults();
+        const settings = this.sanitizeThemeSettings(rawSettings, defaults);
+        const root = document.documentElement;
+
+        root.style.setProperty('--primary-color', settings.color1);
+        root.style.setProperty('--secondary-color', settings.color2);
+        root.style.setProperty('--tertiary-color', settings.color3);
+        root.style.setProperty('--quaternary-color', settings.color4);
+        root.style.setProperty('--background-color', settings.background);
+        this.applyButtonTextColorSettings(settings);
+        this.applyPageHeadingColorSettings(settings);
+
+        this.applyTileTextMode(settings.tileTextMode);
+
+        if (updateInputs) {
+            this.setThemeInputs(settings);
+        }
+
+        if (persist) {
+            localStorage.setItem('quiz_color_1', settings.color1);
+            localStorage.setItem('quiz_color_2', settings.color2);
+            localStorage.setItem('quiz_color_3', settings.color3);
+            localStorage.setItem('quiz_color_4', settings.color4);
+            localStorage.setItem('quiz_color_bg', settings.background);
+            localStorage.setItem('quiz_tile_text_mode', settings.tileTextMode);
+            localStorage.setItem('quiz_theme_version', this.themeStorageVersion);
+        }
+
+        return settings;
+    },
+
+    applyColorSettings() {
+        const settings = this.collectThemeSettingsFromInputs();
+        this.applyThemeSettings(settings, { persist: true, updateInputs: true });
+        this.applyBrandLogo(this.state.brandLogoDataUrl, { persist: true });
+        const brandNameInput = document.getElementById('brandNameInput');
+        this.applyBrandName(brandNameInput?.value || this.state.brandName, { persist: true, updateInput: true });
+    },
+
+    applyColorSettingsAndBack() {
+        this.applyColorSettings();
+        this.state.settingsSessionSnapshot = null;
+        this.closeSettings();
+    },
+
+    cancelSettingsAndBack() {
+        const snapshot = this.state.settingsSessionSnapshot;
+        if (snapshot && snapshot.theme) {
+            this.applyThemeSettings(snapshot.theme, { persist: false, updateInputs: true });
+            this.applyBrandLogo(snapshot.branding?.logoDataUrl || null, { persist: false });
+            this.applyBrandName(snapshot.branding?.brandName || this.state.defaultBrandName, { persist: false, updateInput: true });
+        } else {
+            this.loadColorSettings();
+            this.applyBrandLogo(localStorage.getItem('quiz_brand_logo_data'), { persist: false });
+            this.applyBrandName(localStorage.getItem('quiz_brand_name') || this.state.defaultBrandName, { persist: false, updateInput: true });
+        }
+        this.state.settingsSessionSnapshot = null;
+        this.closeSettings();
+    },
+
+    saveColorSetToFile() {
+        const settings = this.sanitizeThemeSettings(this.collectThemeSettingsFromInputs(), this.getThemeDefaults());
+
+        const now = new Date();
+        const pad = n => n.toString().padStart(2, '0');
+        const defaultBase = `quizwall-farbset-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+        const input = prompt('Dateiname für das Farbset (ohne Endung):', defaultBase);
+        if (input === null) return;
+
+        const baseName = (input || defaultBase)
+            .trim()
+            .replace(/\.(colorset\.)?json$/i, '') || defaultBase;
+
+        const filename = `${baseName}.colorset.json`;
+        const exportData = {
+            format: 'quizwall-color-set',
+            version: 1,
+            exportedAt: new Date().toISOString(),
+            theme: settings,
+            branding: {
+                logoDataUrl: this.state.brandLogoDataUrl,
+                brandName: this.state.brandName
+            }
+        };
+
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+        }, 200);
+    },
+
+    loadColorSetFromFile() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.colorset.json,.json,application/json';
+
+        input.onchange = async (event) => {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+
+            try {
+                const text = await file.text();
+                const parsed = JSON.parse(text);
+                const rawTheme = parsed && typeof parsed === 'object' && parsed.theme ? parsed.theme : parsed;
+                const settings = this.sanitizeThemeSettings(rawTheme, this.getThemeDefaults());
+                this.applyThemeSettings(settings, { persist: false, updateInputs: true });
+                const logoDataUrl = parsed?.branding?.logoDataUrl;
+                if (typeof logoDataUrl === 'string' || logoDataUrl === null) {
+                    this.applyBrandLogo(logoDataUrl, { persist: false });
+                }
+                const brandName = parsed?.branding?.brandName;
+                if (typeof brandName === 'string') {
+                    this.applyBrandName(brandName, { persist: false, updateInput: true });
+                }
+                alert('Farbset geladen. Mit "Farbset anwenden und zurück" übernimmst du es dauerhaft.');
+            } catch (error) {
+                alert(`Farbset konnte nicht geladen werden: ${error.message}`);
+            }
+        };
+
+        input.click();
+    },
+
+    loadColorSettings() {
+        const version = localStorage.getItem('quiz_theme_version');
+        const hasVersionedTheme = version === this.themeStorageVersion;
+        const defaults = this.getThemeDefaults();
+
+        const color1 = hasVersionedTheme ? localStorage.getItem('quiz_color_1') : defaults.color1;
+        const color2 = hasVersionedTheme ? localStorage.getItem('quiz_color_2') : defaults.color2;
+        const color3 = hasVersionedTheme ? localStorage.getItem('quiz_color_3') : defaults.color3;
+        const color4 = hasVersionedTheme ? localStorage.getItem('quiz_color_4') : defaults.color4;
+        const background = hasVersionedTheme ? localStorage.getItem('quiz_color_bg') : defaults.background;
+        const storedTileTextMode = hasVersionedTheme ? localStorage.getItem('quiz_tile_text_mode') : null;
+
+        const activePrimary = (color1 || defaults.color1 || '').trim();
+        const resolvedTileTextMode = (storedTileTextMode === 'light' || storedTileTextMode === 'dark')
+            ? storedTileTextMode
+            : this.getDefaultTileTextMode(activePrimary);
+
+        this.applyThemeSettings({
+            color1,
+            color2,
+            color3,
+            color4,
+            background,
+            tileTextMode: resolvedTileTextMode
+        }, { persist: false, updateInputs: true });
+    },
+
     resetColorSettings() {
-        localStorage.removeItem('quiz_primary');
-        localStorage.removeItem('quiz_bg');
-        localStorage.removeItem('quiz_text');
-        location.reload();
+        if (!confirm('Farbset auf Standardwerte zurücksetzen?')) {
+            return;
+        }
+        const defaults = this.getThemeDefaults();
+        this.applyThemeSettings(defaults, { persist: false, updateInputs: true });
+        this.applyBrandLogo(null, { persist: false });
     },
 
     // ============ PERSISTENZ ============
@@ -1687,7 +2919,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js').catch((error) => {
+            navigator.serviceWorker.register('./sw.js').then((registration) => {
+                registration.update().catch(() => {
+                    // Ignore update probe errors silently.
+                });
+
+                let hasRefreshed = false;
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    if (hasRefreshed) return;
+                    hasRefreshed = true;
+                    window.location.reload();
+                });
+            }).catch((error) => {
                 console.warn('Service Worker Registrierung fehlgeschlagen:', error);
             });
         });
@@ -1759,7 +3002,7 @@ app.handleGameUpload = function(event) {
                 (data.game && Array.isArray(data.game.categories) && data.game.categories.length > 0);
 
             if (!hasEmbeddedCategories) {
-                alert('Dieser Spielstand enthaelt keine eingebetteten Quizdaten und kann nicht geladen werden.');
+                alert('Dieser Spielstand enthält keine eingebetteten Quizdaten und kann nicht geladen werden.');
                 return;
             }
 
@@ -1788,7 +3031,7 @@ app.showResetConfirmation = function() {
     const modal = this.createModal('Bist du sicher?');
 
     const text = document.createElement('p');
-    text.textContent = 'Der komplette Spielstand wird zurueckgesetzt.';
+    text.textContent = 'Der komplette Spielstand wird zurückgesetzt.';
     text.style.margin = '1rem 0 1.5rem 0';
     modal.content.appendChild(text);
 
@@ -1797,9 +3040,9 @@ app.showResetConfirmation = function() {
 
     const confirmBtn = document.createElement('button');
     confirmBtn.className = 'btn btn-danger';
-    confirmBtn.textContent = 'Ja, zuruecksetzen';
+    confirmBtn.textContent = 'Ja, zurücksetzen';
     confirmBtn.onclick = () => {
-        // Punktestand aller Teams zuruecksetzen
+        // Punktestand aller Teams zurücksetzen
         this.state.game.teams.forEach(team => {
             team.score = 0;
         });

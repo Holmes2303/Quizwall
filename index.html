@@ -22,8 +22,11 @@
         <!-- Start Menu Screen -->
         <div id="startMenu" class="screen">
             <div class="start-menu-content">
-                <h1>Quiz Wall</h1>
-                <p class="subtitle">Jeopardy-Stil Spiel auf Basis eines Quiz V 0.9a+ <p/p>
+                <h1 class="start-menu-brand-title">
+                    <img id="startMenuBrandLogo" src="ISG%20Logo.png" alt="Logo">
+                    <span id="startMenuBrandTitle">ISG Quiz Wall</span>
+                </h1>
+                <p class="subtitle">Jeopardy-Stil Spiel auf Basis eines Quiz V 0.9f</p>
                 <p id="quizInfo" class="quiz-info"></p>
 
                 <div class="main-menu-actions">
@@ -39,7 +42,7 @@
                     <hr class="start-menu-divider">
 
                     <div class="menu-sections-grid">
-                        <div class="menu-section">
+                        <div class="menu-section menu-section-quiz">
                             <h4>Quiz verwalten</h4>
                             <button class="btn btn-small" onclick="app.resetQuiz()">
                                 🆕 Quiz neu erstellen
@@ -61,31 +64,33 @@
                             </button>
                         </div>
 
-                        <div class="menu-section">
-                            <h4>Spiel verwalten</h4>
-                            <button class="btn btn-small" onclick="app.saveCurrentGame()">
-                                💾 Spielstand speichern
-                            </button>
-                            <button class="btn btn-small" onclick="document.getElementById('gameFileInput').click()">
-                                📂 Spielstand laden
-                            </button>
-                            <button class="btn btn-small" onclick="app.resetTeams()">
-                                🔄 Spielstand zurücksetzen
-                            </button>
-                        </div>
+                        <div class="menu-right-column">
+                            <div class="menu-section menu-section-game">
+                                <h4>Spiel verwalten</h4>
+                                <button class="btn btn-small" onclick="app.saveCurrentGame()">
+                                    💾 Spielstand speichern
+                                </button>
+                                <button class="btn btn-small" onclick="document.getElementById('gameFileInput').click()">
+                                    📂 Spielstand laden
+                                </button>
+                                <button class="btn btn-small" onclick="app.resetTeams()">
+                                    🔄 Spielstand zurücksetzen
+                                </button>
+                            </div>
 
-                        <div class="menu-section">
-                            <h4>Hilfe</h4>
-                            <button type="button" id="startMenuHelpButton" class="btn btn-small" onclick="window.app && window.app.showHelp && window.app.showHelp()">
-                                ❓ Hilfe & Anleitung
-                            </button>
-                            <button type="button" id="startMenuReadmeButton" class="btn btn-small" onclick="window.app && window.app.showReadme && window.app.showReadme()">
-                                📘 Readme anzeigen
-                            </button>
+                            <div class="menu-section menu-section-help">
+                                <h4>Hilfe</h4>
+                                <button type="button" id="startMenuHelpButton" class="btn btn-small" onclick="window.app && window.app.showHelp && window.app.showHelp()">
+                                    ❓ Hilfe & Anleitung
+                                </button>
+                                <button type="button" id="startMenuReadmeButton" class="btn btn-small" onclick="window.app && window.app.showReadme && window.app.showReadme()">
+                                    📘 Readme anzeigen
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    <button class="btn btn-tertiary btn-large start-menu-settings-btn" onclick="app.showSettings()">
+                    <button class="btn btn-primary btn-large start-menu-settings-btn" onclick="app.showSettings('startMenu')">
                         ⚙️ Einstellungen
                     </button>
                 </div>
@@ -148,7 +153,8 @@
                         </div>
                         <h3>Kategorien</h3>
                         <div id="categoryList" class="category-list"></div>
-                        <button class="btn btn-small btn-primary editor-add-category-btn" onclick="app.editor.addCategory()" aria-label="Kategorie hinzufuegen">+ Kategorie</button>
+                        <button class="btn btn-small btn-primary editor-add-category-btn" onclick="app.editor.addCategory()" aria-label="Kategorie hinzufügen">+ Kategorie</button>
+                        <div id="pointsSchemaEditor" class="points-schema-editor"></div>
                     </div>
 
                     <div class="editor-questions">
@@ -160,7 +166,7 @@
                 <div class="button-group editor-action-group">
                     <button class="btn btn-primary editor-fab-btn editor-fab-play" data-icon="▶" aria-label="Spiel starten" onclick="app.editor.saveAndPlay()">Spiel starten</button>
                     <button class="btn btn-secondary editor-fab-btn editor-fab-save" data-icon="💾" aria-label="Quiz speichern" onclick="app.downloadQuiz()">Quiz speichern</button>
-                    <button class="btn btn-secondary editor-fab-btn editor-fab-home" data-icon="🏠" aria-label="Zum Hauptmenue" onclick="app.goToStartMenu()">Hauptmenü</button>
+                    <button class="btn btn-secondary editor-fab-btn editor-fab-home" data-icon="🏠" aria-label="Zum Hauptmenü" onclick="app.goToStartMenu()">Hauptmenü</button>
                 </div>
             </div>
         </div>
@@ -183,8 +189,9 @@
                     </div>
                                         <div class="quiz-sidebar-actions">
                                                 <button class="btn btn-small btn-tertiary" onclick="app.saveCurrentGame()">💾 Spielstand speichern</button>
-                                                <button class="btn btn-small" onclick="app.goToStartMenu()">🏠 Hauptmenü</button>
                                                 <button id="resetGameButton" class="btn btn-small btn-danger">🔄 Spielstand zurücksetzen</button>
+                                                <button class="btn btn-small btn-secondary" onclick="app.showSettings('quizWall')">⚙️ Einstellungen</button>
+                                            <button class="btn btn-small" onclick="app.goToStartMenu()">🏠 Hauptmenü</button>
                                         </div>
                   </div>
                 </div>
@@ -192,7 +199,7 @@
                     <button class="btn btn-secondary mobile-fab-btn mobile-fab-ranking" onclick="app.showMobileRankingPopup()" aria-label="Aktuelles Ranking anzeigen">
                         🏆
                     </button>
-                    <button class="btn btn-secondary mobile-fab-btn mobile-fab-menu" onclick="app.goToStartMenu()" aria-label="Zurueck ins Hauptmenue">
+                    <button class="btn btn-secondary mobile-fab-btn mobile-fab-menu" onclick="app.goToStartMenu()" aria-label="Zurück ins Hauptmenü">
                         🏠
                     </button>
                 </div>
@@ -262,9 +269,9 @@
 
                     <div class="setup-section hidden" id="aiMaterialSection">
                         <small>
-                            Lade dein Material (z. B. PDFs, Transkripte) direkt in deiner externen KI hoch. Die QuizWall selbst uebertraegt keine Dateien.
+                            Lade dein Material (z. B. PDFs, Transkripte) direkt in deiner externen KI hoch. Die QuizWall selbst überträgt keine Dateien.
                         </small>
-                        <label for="aiMaterialContext" style="margin-top: 0.75rem;">Material-Hinweise/Inhaltsauszuege:</label>
+                        <label for="aiMaterialContext" style="margin-top: 0.75rem;">Material-Hinweise/Inhaltsauszüge:</label>
                         <textarea id="aiMaterialContext" rows="4" placeholder="z. B. Arbeitsblatt 1: Kapitel 2-4, Filmtranskript: Szenen 5-8" oninput="app.updateAiPromptPreview()"></textarea>
                     </div>
 
@@ -328,70 +335,98 @@
             <div class="help-content">
                 <h2>Hilfe & Anleitung</h2>
 
-                <div class="help-section">
-                    <h3>Schnellstart</h3>
-                    <ol>
-                        <li>Über <strong>🆕 Quiz neu erstellen</strong> ein neues Quiz anlegen oder mit <strong>📂 Quiz laden</strong> eine Datei öffnen.</li>
-                        <li>Alternativ mit <strong>🤖 KI-Quiz importieren</strong> automatisch ein Quiz erzeugen lassen.</li>
-                        <li>Dann Spiel starten, Teams festlegen und Fragen auf der Quizwall antippen.</li>
-                    </ol>
-                </div>
+                <div class="help-accordion" role="list">
+                    <details class="help-accordion-item" role="listitem">
+                        <summary>Schnellstart</summary>
+                        <div class="help-accordion-content">
+                            <ol>
+                                <li>Mit <strong>🆕 Quiz neu erstellen</strong> ein neues Quiz anlegen oder mit <strong>📂 Quiz laden</strong> ein vorhandenes Quiz öffnen.</li>
+                                <li>Optional direkt ein KI-Quiz über <strong>🤖 KI-Quiz importieren</strong> erzeugen.</li>
+                                <li>Im <strong>✏️ Editor</strong> Kategorien, Fragen und Punktestufen prüfen/anpassen.</li>
+                                <li>Über <strong>🎮 Neues Spiel</strong> starten, Teams auswählen und auf der Quiz-Wall Fragen antippen.</li>
+                            </ol>
+                        </div>
+                    </details>
 
-                <div class="help-section">
-                    <h3>KI-Import (einfach erklärt)</h3>
-                    <ol>
-                        <li>Klicke auf <strong>🤖 KI-Quiz importieren</strong>.</li>
-                        <li>Beschreibe dein Thema in einfachen Worten (z. B. "Europa für Klasse 7").</li>
-                        <li>Wähle Anzahl Fragen/Kategorien oder nutze die Vorschläge.</li>
-                        <li>Die KI erstellt daraus ein Quiz mit Fragen und Antworten.</li>
-                        <li>Prüfe kurz die Inhalte im Editor und starte dann das Spiel.</li>
-                    </ol>
-                    <p><strong>Wichtig:</strong> Der KI-Import kann dein aktuelles Quiz überschreiben. Speichere vorher bei Bedarf mit <strong>⬇️ Quiz speichern</strong>.</p>
-                </div>
+                    <details class="help-accordion-item" role="listitem">
+                        <summary>Spielablauf</summary>
+                        <div class="help-accordion-content">
+                            <ol>
+                                <li>Frage antippen: Die Fragekarte wird angezeigt.</li>
+                                <li>Mit <strong>Weiter</strong> zur Antwort wechseln.</li>
+                                <li>Teams mit korrekter Antwort markieren oder über <strong>Punkte anpassen</strong> (✏️) Werte manuell korrigieren.</li>
+                                <li>Das Ranking aktualisiert sich automatisch; mit dem <strong>Ranking-Button</strong> (🏆) ist es jederzeit sichtbar.</li>
+                            </ol>
+                        </div>
+                    </details>
 
-                <div class="help-section">
-                    <h3>Symbole im Hauptmenü</h3>
-                    <ul>
-                        <li><strong>🆕</strong> Neues Quiz erstellen</li>
-                        <li><strong>✏️</strong> Editor öffnen</li>
-                        <li><strong>⬇️</strong> Quiz speichern</li>
-                        <li><strong>📂</strong> Quiz oder Spielstand laden</li>
-                        <li><strong>🎯</strong> Demo-Quiz laden</li>
-                        <li><strong>🤖</strong> KI-Quiz importieren</li>
-                        <li><strong>💾</strong> Spielstand speichern</li>
-                        <li><strong>🔄</strong> Spielstand zurücksetzen</li>
-                        <li><strong>⚙️</strong> Einstellungen</li>
-                        <li><strong>❓</strong> Hilfe & Anleitung</li>
-                        <li><strong>📘</strong> Readme anzeigen</li>
-                    </ul>
-                </div>
+                    <details class="help-accordion-item" role="listitem">
+                        <summary>Symbole im Hauptmenü</summary>
+                        <div class="help-accordion-content">
+                            <ul>
+                                <li><strong>🆕</strong> Quiz neu erstellen</li>
+                                <li><strong>✏️</strong> Editor öffnen</li>
+                                <li><strong>⬇️</strong> Quiz speichern</li>
+                                <li><strong>📂</strong> Quiz / Spielstand laden</li>
+                                <li><strong>🎯</strong> Demo-Quiz laden</li>
+                                <li><strong>🤖</strong> KI-Quiz importieren</li>
+                                <li><strong>💾</strong> Spielstand speichern</li>
+                                <li><strong>🔄</strong> Spielstand zurücksetzen</li>
+                                <li><strong>⚙️</strong> Einstellungen öffnen</li>
+                                <li><strong>❓</strong> Hilfe & Anleitung öffnen</li>
+                                <li><strong>📘</strong> Readme anzeigen</li>
+                            </ul>
+                        </div>
+                    </details>
 
-                <div class="help-section">
-                    <h3>Spielablauf</h3>
-                    <ul>
-                        <li>Frage wird angezeigt.</li>
-                        <li>Antwort wird angezeigt.</li>
-                        <li>Teams mit korrekter Antwort ankreuzen.</li>
-                        <li>Ranking wird aktualisiert.</li>
-                    </ul>
-                </div>
+                    <details class="help-accordion-item" role="listitem">
+                        <summary>KI-Import</summary>
+                        <div class="help-accordion-content">
+                            <ol>
+                                <li><strong>🤖 KI-Quiz importieren</strong> öffnen.</li>
+                                <li>Thema, Klassenstufe, Fragezahl und Stil eingeben.</li>
+                                <li>Prompt kopieren, in die externe KI einfügen und die Antwort zurückkopieren.</li>
+                                <li>Importieren und anschließend im Editor kurz prüfen.</li>
+                            </ol>
+                            <p><strong>Wichtig:</strong> Der KI-Import kann aktuelles Quiz und Spielstand überschreiben. Vorher bei Bedarf speichern.</p>
+                        </div>
+                    </details>
 
-                <div class="help-section">
-                    <h3>Dateien</h3>
-                    <ul>
-                        <li>Quiz-Dateien: <strong>.quiz.json</strong></li>
-                        <li>Spielstände: <strong>.game.json</strong></li>
-                        <li>Spielstände enthalten auch die Quizdaten.</li>
-                    </ul>
-                </div>
+                    <details class="help-accordion-item" role="listitem">
+                        <summary>Einstellungen</summary>
+                        <div class="help-accordion-content">
+                            <ul>
+                                <li><strong>Name und Logo:</strong> Branding-Name ändern, Logo laden, Farben aus Logo ableiten.</li>
+                                <li><strong>Farben anpassen:</strong> Farbe 1-4, Hintergrund und Kacheltextmodus (hell/dunkel) einstellen.</li>
+                                <li><strong>Animation:</strong> Diese Funktion wird später aktiviert.</li>
+                                <li><strong>Logo, Name und Farben:</strong> Hier kann man das aktuelle Farbset <strong class="help-button-word">Speichern</strong>, ein alternatives Set <strong class="help-button-word">Laden</strong> oder alle Änderungen auf Standardwerte <strong class="help-button-word">Zurücksetzen</strong>. Alle gemachten Änderungen werden mit <strong>Anwenden</strong> wirksam oder durch <strong>Abbrechen</strong> verworfen.</li>
+                            </ul>
+                        </div>
+                    </details>
 
-                <div class="help-section">
-                    <h3>Tipps für Mobilgeräte</h3>
-                    <ul>
-                        <li>Im Querformat Browserleisten ggf. durch kurzes Scrollen ausblenden.</li>
-                        <li>Ranking und Hauptmenü sind über die Floating-Buttons erreichbar.</li>
-                        <li>Für PWA-Updates Seite einmal neu laden oder App erneut zum Home-Bildschirm hinzufügen.</li>
-                    </ul>
+                    <details class="help-accordion-item" role="listitem">
+                        <summary>Dateien</summary>
+                        <div class="help-accordion-content">
+                            <ul>
+                                <li>Quiz-Dateien: <strong>.quiz.json</strong></li>
+                                <li>Spielstände: <strong>.game.json</strong></li>
+                                <li>Spielstände enthalten Teams, Punkte, bereits gespielte Fragen und die aktuellen Quizdaten.</li>
+                                <li>Farbsets: <strong>.colorset.json</strong> (inkl. CI-Farben und optional Branding-Infos).</li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <details class="help-accordion-item" role="listitem">
+                        <summary>Tipps für Mobilgeräte</summary>
+                        <div class="help-accordion-content">
+                            <ul>
+                                <li>Im Hoch- und Querformat kurz scrollen, damit Browserleisten ausgeblendet werden.</li>
+                                <li>Ranking (🏆) und Hauptmenü (🏠) in der Quiz-Wall über die Floating-Buttons öffnen.</li>
+                                <li>Falls etwas „alt“ aussieht: Seite 1-2x neu laden (Service-Worker-Cache aktualisiert sich dann).</li>
+                                <li>Für den Unterricht sinnvoll: Schriftgröße im Browser nicht zu stark vergrößern, damit alle Karten sichtbar bleiben.</li>
+                            </ul>
+                        </div>
+                    </details>
                 </div>
             </div>
 
@@ -409,30 +444,79 @@
         <!-- Settings Screen -->
         <div id="settings" class="screen hidden">
             <div class="settings-content">
-                <h2>Einstellungen</h2>
-                
-                <div class="settings-section">
-                    <h3>Farbe anpassen</h3>
-                    <div class="color-settings">
-                        <div class="color-control">
-                            <label for="primaryColor">Primärfarbe:</label>
-                            <input type="color" id="primaryColor" value="#E25D03">
+                <h2>CI-Einstellungen</h2>
+                <div class="settings-sections-grid">
+                    <div class="settings-section settings-section-logo">
+                        <h3>Name und Logo</h3>
+                        <div class="settings-brand-name-row">
+                            <label for="brandNameInput">Name:</label>
+                            <input type="text" id="brandNameInput" maxlength="50" value="ISG Quiz Wall" placeholder="Name der Webseite">
                         </div>
-                        <div class="color-control">
-                            <label for="backgroundColor">Hintergrundfarbe:</label>
-                            <input type="color" id="backgroundColor" value="#FFFFFF">
+                        <div class="settings-logo-layout">
+                            <img id="settingsLogoPreview" class="settings-logo-preview" src="ISG%20Logo.png" alt="Logo Vorschau">
+                            <div class="settings-actions-row settings-actions-bottom">
+                                <button class="btn btn-secondary" onclick="document.getElementById('logoFileInput').click()">Logo laden</button>
+                                <button class="btn btn-secondary" onclick="app.applyThemeFromLogo()">Farben aus Logo</button>
+                            </div>
                         </div>
-                        <div class="color-control">
-                            <label for="textColor">Textfarbe:</label>
-                            <input type="color" id="textColor" value="#222222">
+                        <input type="file" id="logoFileInput" accept="image/*" style="display: none;" onchange="app.handleLogoUpload(event)">
+                    </div>
+
+                    <div class="settings-section settings-section-colors">
+                        <h3>Farben anpassen</h3>
+                        <div class="color-settings settings-color-grid">
+                            <div class="color-control">
+                                <label for="primaryColor">Farbe 1:</label>
+                                <input type="color" id="primaryColor" value="#F7C001">
+                            </div>
+                            <div class="color-control">
+                                <label for="secondaryColor">Farbe 2:</label>
+                                <input type="color" id="secondaryColor" value="#F18A01">
+                            </div>
+                            <div class="color-control">
+                                <label for="tertiaryColor">Farbe 3:</label>
+                                <input type="color" id="tertiaryColor" value="#C83426">
+                            </div>
+                            <div class="color-control">
+                                <label for="quaternaryColor">Farbe 4:</label>
+                                <input type="color" id="quaternaryColor" value="#E9ECEF">
+                            </div>
+                            <div class="color-control">
+                                <label for="backgroundColor">Hintergrund:</label>
+                                <input type="color" id="backgroundColor" value="#FFFFFF">
+                            </div>
+                        </div>
+                        <div class="settings-tile-text-row">
+                            <div class="color-control color-control-tile-text">
+                                <label for="tileTextMode">Kacheltext:</label>
+                                <select id="tileTextMode">
+                                    <option value="light">Hell</option>
+                                    <option value="dark">Dunkel</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
-                    <button class="btn btn-primary btn-small" onclick="app.applyColorSettings()">Farben speichern</button>
-                    <button class="btn btn-secondary btn-small" onclick="app.resetColorSettings()">Zurücksetzen</button>
-                </div>
 
-                <div class="button-group">
-                    <button class="btn btn-secondary" onclick="app.goToStartMenu()">Zurück</button>
+                    <div class="settings-section settings-section-animation">
+                        <h3>Animationen</h3>
+                        <div class="settings-actions-row settings-animation-toggle">
+                            <button class="btn btn-secondary btn-small" onclick="app.showAnimationsComingSoon()">Ein</button>
+                            <button class="btn btn-secondary btn-small" onclick="app.showAnimationsComingSoon()">Aus</button>
+                        </div>
+                    </div>
+
+                    <div class="settings-section settings-section-farbset">
+                        <h3>Logo, Name und Farben</h3>
+                        <div class="settings-actions-row settings-actions-top">
+                            <button class="btn btn-primary btn-small" onclick="app.saveColorSetToFile()">Speichern</button>
+                            <button class="btn btn-secondary btn-small" onclick="app.loadColorSetFromFile()">Laden</button>
+                            <button class="btn btn-danger btn-small" onclick="app.resetColorSettings()">Zurücksetzen</button>
+                        </div>
+                        <div class="settings-actions-row settings-actions-bottom">
+                            <button class="btn btn-primary" onclick="app.applyColorSettingsAndBack()">Anwenden</button>
+                            <button class="btn btn-secondary" onclick="app.cancelSettingsAndBack()">Abbrechen</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
