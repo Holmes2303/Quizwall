@@ -21,7 +21,7 @@ Interaktive Jeopardy-Quiz-App (Vanilla HTML, CSS, JavaScript) mit Editor, Spiels
 - Farbschema-Einstellungen (Primaer-, Hintergrund-, Textfarbe)
 - KI-Import-Flow mit Prompt-Generator und JSON-Parser
 
-## Neuerungen (Version 0.8)
+## Neuerungen (Version 0.9)
 
 ### 1) KI-Quiz-Import
 
@@ -119,6 +119,49 @@ Danach wird die Frage als gespielt markiert und die Quizwand aktualisiert.
 
 - Das Startmenue ist so angepasst, dass Ueberschriften und oberer Bereich auch auf kleinen Displays vollstaendig erreichbar bleiben
 - Vertikale Positionierung/Scrollbarkeit wurden entsprechend ueberarbeitet
+
+### 13) Mobile Editor-Usability deutlich verbessert
+
+- Kategorienliste im Editor ist auf Mobilgeraeten sauber erreichbar/scrollbar
+- Alle Fragen-Akkordeons starten beim Oeffnen des Editors eingeklappt
+- Spezielle Mobile-Landscape-Variante fuer Editor-Aktionen:
+  - `+ Kategorie` als runder `+`-Button
+  - `Spiel starten`, `Quiz speichern`, `Hauptmenue` als rechtsbuendige Floating-Buttons mit Symbolen
+
+### 14) Robusteres Responsiv-Verhalten zwischen echten Geraeten
+
+- Zentrale Layout-Erkennung im JavaScript (u. a. kompakt/desktop, touch/fine, portrait/landscape)
+- CSS reagiert zusaetzlich auf diese Klassen, nicht nur auf statische Media-Queries
+- Ergebnis: konsistentere Darstellung zwischen DevTools-Emulation und echten Geraeten
+
+### 15) iPad-spezifische Quizwand-Fixes
+
+- Touch-Tablet-Breakpoints verhindern Kachel-Ueberlagerungen auf der Quizwand
+- Kartenhoehen fuellen kontrolliert die Grid-Zellen statt diese zu sprengen
+- Hover-bedingte Skalierung ist auf Touch-Geraeten deaktiviert (verhindert "haengende" Hover-Zustaende)
+
+### 16) Verbesserte Mobile-Querformat-Nutzung
+
+- Fuer kleine Touch-Landscape-Viewports kann die Quizwand minimal scrollen
+- Dadurch lassen sich Browserleisten ausblenden und mehr Nutzflaeche gewinnen
+
+### 17) PWA-Basis integriert (safe minimal)
+
+- Web App Manifest (`manifest.webmanifest`) hinzugefuegt
+- iOS/Standalone-Metatags in `index.html` gesetzt
+- Service Worker (`sw.js`) registriert
+- Ziel: bessere Installierbarkeit und app-aehnliches Startverhalten ohne den weiteren Feature-Ausbau zu blockieren
+
+### 18) PWA-Startzeit und Icons optimiert
+
+- Service Worker auf leichtere Cache-Strategie umgestellt:
+  - HTML: `network-first`
+  - Assets: `stale-while-revalidate`
+- Eigene Icon-Dateien erzeugt statt eines einzigen Quellbildes:
+  - `icons/icon-192.png`
+  - `icons/icon-512.png`
+  - `icons/apple-touch-icon.png`
+- Logo wird im quadratischen Icon vollstaendig dargestellt (mit weissen Flaechen statt Beschnitt)
 
 ## Bedienung
 
@@ -232,6 +275,12 @@ Die App nutzt `localStorage`.
 ├── index.html
 ├── style.css
 ├── script.js
+├── manifest.webmanifest
+├── sw.js
+├── icons/
+│   ├── icon-192.png
+│   ├── icon-512.png
+│   └── apple-touch-icon.png
 ├── default-quiz-data.js
 ├── sample-quiz.json
 ├── QUICKSTART.md
@@ -252,6 +301,7 @@ Keine Build-Tools erforderlich.
 - JSON-Import erwartet valide Strukturen mit Kategorien und Fragen.
 - Beim KI-Flow werden keine Dateien direkt aus der App an KI-Dienste uebertragen.
 - Mobile Darstellung ist fuer Hoch- und Querformat optimiert; sehr kleine Viewports erhalten zusaetzliche kompakte Regeln.
+- PWA-Verhalten kann auf iOS je nach Cache/App-Icon-Stand ein einmaliges Neu-Hinzufuegen zum Home-Bildschirm erfordern.
 
 ## Lizenz
 
