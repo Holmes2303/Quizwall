@@ -16,15 +16,7 @@ Aktueller UI-Stand: Version `0.9d`.
 - KI-Import mit Prompt-Generator und robustem JSON-Import
 - PWA-Basis (Manifest, Service Worker, Icons)
 
-## Schnellstart
 
-1. `index.html` lokal oeffnen **oder** lokalen Webserver starten:
-
-```bash
-python3 -m http.server 8000
-```
-
-2. Im Browser aufrufen: `http://localhost:8000`
 3. Im Hauptmenue `🎮 Neues Spiel` waehlen oder ein Quiz laden.
 
 ## Bedienung
