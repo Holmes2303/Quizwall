@@ -1,0 +1,14 @@
+[33mcommit 38069604702c16432266337de559f6167e533da2[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: Holmes2303 <sigi-schulz@t-online.de>
+Commit: Holmes2303 <sigi-schulz@t-online.de>
+
+    release(v0.9): Mobile-Stabilisierung, iPad-Fixes und PWA-Basis
+    
+    1. Stabilisiert responsive Darstellung auf echten Mobilgeräten (Pixel/iPad) über zentrale Layout-Klassifizierung.
+    2. Behebt Quizwall-Überlagerungen auf Touch/iPad (inkl. Touch-Hover-Fix).
+    3. Verbessert Mobile-Editor-Usability (scrollbare Kategorien, eingeklappte Akkordeons, Landscape-FABs).
+    4. Optimiert mobile Modals für Frage/Antwort/Ranking inkl. orientierungsabhängiger Team-Layoutlogik.
+    5. Ergänzt minimale PWA-Basis (Manifest, Meta-Tags, SW-Registrierung).
+    6. Optimiert Service Worker (network-first für HTML, stale-while-revalidate für Assets).
+    7. Fügt dedizierte App-Icons (192/512/Apple) hinzu und korrigiert Logo-Darstellung ohne Beschnitt.
+    8. Aktualisiert README auf Version 0.9 mit allen neuen Features und technischen Änderungen.Release 0.9: Mobile-Stabilisierung, iPad-Fixes und PWA-Basis
