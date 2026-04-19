@@ -1410,6 +1410,29 @@ body {
     gap: 0.5rem;
 }
 
+.editor-questions #selectedCategoryTitle {
+    margin-bottom: 0.75rem;
+}
+
+.editor-questions #selectedCategoryTitle .editor-category-name-input {
+    width: 100%;
+    padding: 0.5rem;
+    margin-bottom: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 0.25rem;
+    background-color: #ffffff;
+    color: var(--text-color);
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.2;
+}
+
+.editor-questions #selectedCategoryTitle .editor-category-name-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
 .team-editor-item {
     display: flex;
     gap: 0.5rem;

@@ -2021,7 +2021,7 @@ const app = {
         const titleInput = document.createElement('input');
         titleInput.type = 'text';
         titleInput.value = cat.name;
-        titleInput.className = 'team-name-input';
+        titleInput.className = 'editor-category-name-input';
         titleInput.oninput = (event) => {
             cat.name = event.target.value || `Kategorie ${idx + 1}`;
             this.renderCategoryList();

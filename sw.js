@@ -1,5 +1,5 @@
-const CORE_CACHE = 'quizwall-core-v5';
-const RUNTIME_CACHE = 'quizwall-runtime-v5';
+const CORE_CACHE = 'quizwall-core-v6';
+const RUNTIME_CACHE = 'quizwall-runtime-v6';
 
 // Keep install light for faster first meaningful paint.
 const CORE_ASSETS = [
