@@ -17,7 +17,10 @@ Aktueller UI-Stand: Version `0.9d`.
 - PWA-Basis (Manifest, Service Worker, Icons)
 
 
-3. Im Hauptmenue `🎮 Neues Spiel` waehlen oder ein Quiz laden.
+## Schnellstart
+Im Hauptmenue 
+1. `🎯 Demo-Quiz laden`
+2. `🎮 Neues Spiel` waehlen.
 
 ## Bedienung
 
