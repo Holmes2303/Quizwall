@@ -23,7 +23,7 @@
         <div id="startMenu" class="screen">
             <div class="start-menu-content">
                 <h1>Quiz Wall</h1>
-                <p class="subtitle">Jeopardy-Stil Spiel auf Basis eines Quiz V 0.9 PWA</p>
+                <p class="subtitle">Jeopardy-Stil Spiel auf Basis eines Quiz V 0.9a hl<p/p>
                 <p id="quizInfo" class="quiz-info"></p>
 
                 <div class="main-menu-actions">
@@ -71,6 +71,16 @@
                             </button>
                             <button class="btn btn-small" onclick="app.resetTeams()">
                                 🔄 Spielstand zurücksetzen
+                            </button>
+                        </div>
+
+                        <div class="menu-section">
+                            <h4>Hilfe</h4>
+                            <button type="button" id="startMenuHelpButton" class="btn btn-small" onclick="window.app && window.app.showHelp && window.app.showHelp()">
+                                ❓ Hilfe & Anleitung
+                            </button>
+                            <button type="button" id="startMenuReadmeButton" class="btn btn-small" onclick="window.app && window.app.showReadme && window.app.showReadme()">
+                                📘 Readme anzeigen
                             </button>
                         </div>
                     </div>
@@ -311,6 +321,89 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Settings Screen -->
+        <div id="help" class="screen hidden">
+            <div class="help-content">
+                <h2>Hilfe & Anleitung</h2>
+
+                <div class="help-section">
+                    <h3>Schnellstart</h3>
+                    <ol>
+                        <li>Über <strong>🆕 Quiz neu erstellen</strong> ein neues Quiz anlegen oder mit <strong>📂 Quiz laden</strong> eine Datei öffnen.</li>
+                        <li>Alternativ mit <strong>🤖 KI-Quiz importieren</strong> automatisch ein Quiz erzeugen lassen.</li>
+                        <li>Dann Spiel starten, Teams festlegen und Fragen auf der Quizwall antippen.</li>
+                    </ol>
+                </div>
+
+                <div class="help-section">
+                    <h3>KI-Import (einfach erklärt)</h3>
+                    <ol>
+                        <li>Klicke auf <strong>🤖 KI-Quiz importieren</strong>.</li>
+                        <li>Beschreibe dein Thema in einfachen Worten (z. B. "Europa für Klasse 7").</li>
+                        <li>Wähle Anzahl Fragen/Kategorien oder nutze die Vorschläge.</li>
+                        <li>Die KI erstellt daraus ein Quiz mit Fragen und Antworten.</li>
+                        <li>Prüfe kurz die Inhalte im Editor und starte dann das Spiel.</li>
+                    </ol>
+                    <p><strong>Wichtig:</strong> Der KI-Import kann dein aktuelles Quiz überschreiben. Speichere vorher bei Bedarf mit <strong>⬇️ Quiz speichern</strong>.</p>
+                </div>
+
+                <div class="help-section">
+                    <h3>Symbole im Hauptmenü</h3>
+                    <ul>
+                        <li><strong>🆕</strong> Neues Quiz erstellen</li>
+                        <li><strong>✏️</strong> Editor öffnen</li>
+                        <li><strong>⬇️</strong> Quiz speichern</li>
+                        <li><strong>📂</strong> Quiz oder Spielstand laden</li>
+                        <li><strong>🎯</strong> Demo-Quiz laden</li>
+                        <li><strong>🤖</strong> KI-Quiz importieren</li>
+                        <li><strong>💾</strong> Spielstand speichern</li>
+                        <li><strong>🔄</strong> Spielstand zurücksetzen</li>
+                        <li><strong>⚙️</strong> Einstellungen</li>
+                        <li><strong>❓</strong> Hilfe & Anleitung</li>
+                        <li><strong>📘</strong> Readme anzeigen</li>
+                    </ul>
+                </div>
+
+                <div class="help-section">
+                    <h3>Spielablauf</h3>
+                    <ul>
+                        <li>Frage wird angezeigt.</li>
+                        <li>Antwort wird angezeigt.</li>
+                        <li>Teams mit korrekter Antwort ankreuzen.</li>
+                        <li>Ranking wird aktualisiert.</li>
+                    </ul>
+                </div>
+
+                <div class="help-section">
+                    <h3>Dateien</h3>
+                    <ul>
+                        <li>Quiz-Dateien: <strong>.quiz.json</strong></li>
+                        <li>Spielstände: <strong>.game.json</strong></li>
+                        <li>Spielstände enthalten auch die Quizdaten.</li>
+                    </ul>
+                </div>
+
+                <div class="help-section">
+                    <h3>Tipps für Mobilgeräte</h3>
+                    <ul>
+                        <li>Im Querformat Browserleisten ggf. durch kurzes Scrollen ausblenden.</li>
+                        <li>Ranking und Hauptmenü sind über die Floating-Buttons erreichbar.</li>
+                        <li>Für PWA-Updates Seite einmal neu laden oder App erneut zum Home-Bildschirm hinzufügen.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <button
+                type="button"
+                class="btn btn-secondary help-back-fab"
+                onclick="app.goToStartMenu()"
+                aria-label="Zurück zum Hauptmenü"
+                title="Zurück"
+            >
+                ⬅️
+            </button>
         </div>
 
         <!-- Settings Screen -->

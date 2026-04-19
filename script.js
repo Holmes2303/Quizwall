@@ -344,6 +344,9 @@ const app = {
             if (options.layout === 'qa') {
                 modalBg.classList.add('custom-modal-qa');
             }
+            if (options.layout === 'readme') {
+                modalBg.classList.add('custom-modal-readme');
+            }
             modalBg.style.position = 'fixed';
             modalBg.style.top = '0';
             modalBg.style.left = '0';
@@ -357,6 +360,9 @@ const app = {
             const modal = document.createElement('div');
             if (options.layout === 'qa') {
                 modal.classList.add('custom-modal-card-qa');
+            }
+            if (options.layout === 'readme') {
+                modal.classList.add('custom-modal-card-readme');
             }
             modal.style.background = '#fff';
             modal.style.padding = '2rem';
@@ -375,6 +381,18 @@ const app = {
                 modal.style.overflow = 'hidden';
             }
 
+            if (options.layout === 'readme') {
+                modal.style.width = '80vw';
+                modal.style.height = '80vh';
+                modal.style.maxWidth = '80vw';
+                modal.style.maxHeight = '80vh';
+                modal.style.display = 'flex';
+                modal.style.flexDirection = 'column';
+                modal.style.alignItems = 'stretch';
+                modal.style.overflow = 'hidden';
+                modal.style.padding = '1.2rem 1.2rem 1rem';
+            }
+
             const h2 = document.createElement('h2');
             h2.textContent = title;
             h2.style.color = 'var(--primary-color)';
@@ -382,6 +400,13 @@ const app = {
             const content = document.createElement('div');
             if (options.layout === 'qa') {
                 content.classList.add('custom-modal-content-qa');
+                content.style.display = 'flex';
+                content.style.flexDirection = 'column';
+                content.style.flex = '1';
+                content.style.minHeight = '0';
+            }
+            if (options.layout === 'readme') {
+                content.classList.add('custom-modal-content-readme');
                 content.style.display = 'flex';
                 content.style.flexDirection = 'column';
                 content.style.flex = '1';
@@ -477,6 +502,24 @@ const app = {
                 event.stopPropagation();
                 this.resetGame();
             });
+        }
+
+        const startMenuHelpBtn = document.getElementById('startMenuHelpButton');
+        if (startMenuHelpBtn) {
+            startMenuHelpBtn.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                this.showHelp();
+            }, { capture: true });
+        }
+
+        const startMenuReadmeBtn = document.getElementById('startMenuReadmeButton');
+        if (startMenuReadmeBtn) {
+            startMenuReadmeBtn.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                this.showReadme();
+            }, { capture: true });
         }
 
         const teamCountQuick = document.getElementById('teamCountQuick');
@@ -1528,6 +1571,43 @@ const app = {
     },
 
     // ============ EINSTELLUNGEN & FARBEN ============
+    showHelp() { this.showScreen('help'); },
+    async showReadme() {
+        const modal = this.createModal('README', { layout: 'readme' });
+
+        const body = document.createElement('div');
+        body.className = 'readme-inline-body';
+        body.textContent = 'README wird geladen...';
+        modal.content.appendChild(body);
+
+        const actions = document.createElement('div');
+        actions.className = 'qa-modal-actions';
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'btn btn-secondary';
+        closeBtn.textContent = 'Schliessen';
+        closeBtn.onclick = () => modal.close();
+
+        actions.appendChild(closeBtn);
+        modal.content.appendChild(actions);
+
+        try {
+            const response = await fetch('./README.md', { cache: 'no-store' });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const markdown = await response.text();
+            body.textContent = '';
+
+            const pre = document.createElement('pre');
+            pre.className = 'readme-inline-pre';
+            pre.textContent = markdown;
+            body.appendChild(pre);
+        } catch (error) {
+            body.textContent = `README konnte nicht geladen werden: ${error.message}`;
+        }
+    },
     showSettings() { this.showScreen('settings'); },
 
     applyColorSettings() {

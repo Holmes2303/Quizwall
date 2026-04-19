@@ -82,6 +82,45 @@
     min-width: 4ch;
     text-align: right;
 }
+
+.custom-modal-readme > .custom-modal-card-readme {
+    width: min(80vw, 1400px) !important;
+    height: 80vh !important;
+    max-width: 1400px !important;
+    max-height: 80vh !important;
+    margin: 0 auto !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+}
+
+.custom-modal-readme h2 {
+    font-size: clamp(1.1rem, 2.5vw, 1.6rem);
+    margin-bottom: 0.65rem;
+}
+
+.custom-modal-content-readme {
+    gap: 0.75rem;
+}
+
+.readme-inline-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 0.6rem;
+    background: #fffdf9;
+    padding: 0.8rem;
+}
+
+.readme-inline-pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    color: var(--text-color);
+}
 .quiz-wall-area {
     height: 60vh;
     max-height: 60vh;
@@ -222,7 +261,7 @@ body {
 /* Start Menu */
 .start-menu-content {
     text-align: center;
-    padding: 2rem;
+    padding: 1.4rem 1.5rem 1.1rem;
     width: min(100%, 960px);
     min-height: calc(100vh - 2rem);
     min-height: calc(100dvh - 2rem);
@@ -241,14 +280,14 @@ body {
 .start-menu-content .subtitle {
     font-size: 1.2rem;
     color: var(--text-light);
-    margin-bottom: 3rem;
+    margin-bottom: 1.25rem;
 }
 
 .start-menu-content .quiz-info {
     font-size: 1rem;
     color: var(--text-light);
-    margin-bottom: 2rem;
-    padding: 0.75rem 1.5rem;
+    margin-bottom: 1rem;
+    padding: 0.55rem 1.1rem;
     background-color: rgba(226, 93, 3, 0.08);
     border-left: 4px solid var(--primary-color);
     border-radius: 0.25rem;
@@ -258,22 +297,22 @@ body {
 .main-menu-actions {
     display: grid;
     grid-template-columns: repeat(2, minmax(220px, 1fr));
-    gap: 1rem;
+    gap: 0.75rem;
     width: min(100%, 760px);
-    margin: 0 auto 1.25rem auto;
+    margin: 0 auto 0.85rem auto;
 }
 
 .main-menu-actions .btn-large {
     width: 100%;
     max-width: none;
-    min-height: 4rem;
+    min-height: 3.2rem;
 }
 
 .start-menu-management {
     width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.7rem;
     flex: 1;
     align-items: center;
 }
@@ -286,28 +325,69 @@ body {
 }
 
 .menu-sections-grid {
-    width: 85vw;
+    width: min(100%, 920px);
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 5vw;
-    row-gap: 1rem;
+    grid-template-areas:
+        "quiz game"
+        "quiz help";
+    column-gap: clamp(0.6rem, 1.8vw, 1rem);
+    row-gap: clamp(0.45rem, 1.2vh, 0.75rem);
+    align-items: stretch;
+    position: relative;
+    isolation: isolate;
+}
+
+.menu-sections-grid .menu-section:nth-child(1) {
+    grid-area: quiz;
+}
+
+.menu-sections-grid .menu-section:nth-child(2) {
+    grid-area: game;
+}
+
+.menu-sections-grid .menu-section:nth-child(3) {
+    grid-area: help;
 }
 
 .start-menu-management .menu-section {
     min-width: 0;
     margin: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    position: relative;
+    z-index: 1;
+}
+
+.menu-sections-grid .menu-section:nth-child(3) {
+    z-index: 3;
+}
+
+.menu-sections-grid .menu-section:nth-child(3) .btn {
+    position: relative;
+    z-index: 4;
+    pointer-events: auto;
 }
 
 .start-menu-management .menu-section .btn {
-    width: 80%;
-    margin: 0.25rem auto;
+    width: 100%;
+    margin: 0 0 0.35rem 0;
     display: block;
+    min-height: clamp(2.2rem, 4.4vh, 2.75rem);
+    padding: 0.5rem 0.7rem;
+    line-height: 1.2;
+}
+
+.start-menu-management .menu-section .btn:last-child {
+    margin-bottom: 0;
 }
 
 .start-menu-settings-btn {
     width: calc((100% - 1rem) / 2);
     max-width: none;
-    min-height: 4rem;
+    min-height: 3.1rem;
     margin: auto auto 0 auto;
 }
 
@@ -334,14 +414,14 @@ body {
 .menu-section {
     background-color: var(--card-color);
     border-radius: 0.5rem;
-    padding: 1rem;
+    padding: 0.75rem 0.8rem;
     margin: 0.5rem 0;
     border: 1px solid var(--border-color);
-    min-width: 250px;
+    min-width: 0;
 }
 
 .menu-section h4 {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.55rem;
     color: var(--text-color);
     font-size: 1rem;
     font-weight: 600;
@@ -447,7 +527,15 @@ body {
 
     .menu-sections-grid {
         grid-template-columns: 1fr;
+        grid-template-areas:
+            "quiz"
+            "game"
+            "help";
         width: 95vw;
+    }
+
+    .menu-sections-grid .menu-section:nth-child(3) {
+        grid-column: auto;
     }
 
     .start-menu-management .menu-section .btn {
@@ -459,10 +547,72 @@ body {
     }
 }
 
+@media (orientation: landscape) and (max-height: 900px) {
+    #startMenu.screen {
+        padding-top: 0.45rem;
+        padding-bottom: 0.45rem;
+    }
+
+    .start-menu-content {
+        min-height: calc(100vh - 0.9rem);
+        min-height: calc(100dvh - 0.9rem);
+        padding: 0.65rem 1rem 0.7rem;
+    }
+
+    .start-menu-content h1 {
+        font-size: clamp(1.45rem, 3.4vw, 2.25rem);
+        margin-bottom: 0.15rem;
+    }
+
+    .start-menu-content .subtitle {
+        margin-bottom: 0.55rem;
+        font-size: clamp(0.9rem, 1.55vw, 1.05rem);
+    }
+
+    .start-menu-content .quiz-info {
+        margin-bottom: 0.55rem;
+        font-size: 0.9rem;
+        padding: 0.4rem 0.75rem;
+    }
+
+    .main-menu-actions {
+        margin-bottom: 0.55rem;
+        gap: 0.55rem;
+    }
+
+    .main-menu-actions .btn-large,
+    .start-menu-settings-btn {
+        min-height: clamp(2.5rem, 6.2vh, 3rem);
+        font-size: clamp(0.88rem, 1.5vw, 1rem);
+        padding-top: 0.48rem;
+        padding-bottom: 0.48rem;
+    }
+
+    .start-menu-management {
+        gap: 0.55rem;
+    }
+
+    .start-menu-management .menu-section .btn {
+        min-height: clamp(2rem, 4.9vh, 2.5rem);
+        font-size: clamp(0.8rem, 1.2vw, 0.95rem);
+        margin-bottom: 0.28rem;
+    }
+
+    .menu-section {
+        padding: 0.6rem 0.7rem;
+    }
+
+    .menu-section h4 {
+        margin-bottom: 0.42rem;
+        font-size: 0.92rem;
+    }
+}
+
 /* Setup Screen */
 .setup-content,
 .editor-content,
 .settings-content,
+.help-content,
 .ranking-container {
     background-color: var(--card-color);
     border-radius: 1rem;
@@ -825,6 +975,15 @@ html.layout-desktop .mobile-fab-stack {
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
+.mobile-fab-btn,
+#editor .editor-fab-btn,
+#editor .editor-add-category-btn,
+.help-back-fab {
+    background-color: var(--background-color) !important;
+    color: var(--text-color) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
 .mobile-fab-menu {
     width: 3rem;
     height: 3rem;
@@ -1176,6 +1335,64 @@ html.layout-desktop .quiz-sidebar {
 .settings-content {
     max-width: 500px;
     width: 90%;
+}
+
+.help-content {
+    max-width: 860px;
+    width: 94%;
+    max-height: 92vh;
+    overflow-y: auto;
+}
+
+.help-section {
+    margin-bottom: 1.25rem;
+    padding: 1rem 1.1rem;
+    background: rgba(226, 93, 3, 0.06);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+}
+
+.help-section h3 {
+    color: var(--primary-color);
+    margin-bottom: 0.55rem;
+}
+
+.help-section ul,
+.help-section ol {
+    margin-left: 1.2rem;
+    line-height: 1.5;
+}
+
+.help-section li {
+    margin-bottom: 0.35rem;
+}
+
+.help-back-fab {
+    position: fixed !important;
+    right: 1rem !important;
+    bottom: 1rem !important;
+    width: 3.1rem !important;
+    height: 3.1rem !important;
+    min-height: 3.1rem !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    line-height: 1;
+    z-index: 1200;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+}
+
+#help.screen .help-content {
+    padding-bottom: 2.4rem;
+}
+
+@supports (bottom: env(safe-area-inset-bottom)) {
+    .help-back-fab {
+        bottom: calc(1rem + env(safe-area-inset-bottom));
+    }
 }
 
 .settings-section {
@@ -1631,6 +1848,7 @@ html.layout-desktop .quiz-sidebar {
     .setup-content,
     .editor-content,
     .settings-content,
+    .help-content,
     .ranking-container {
         width: 95%;
         padding: 1.5rem;
