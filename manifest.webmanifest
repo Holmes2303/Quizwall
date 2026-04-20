@@ -1,6 +1,6 @@
 {
-  "name": "Quiz Wall",
-  "short_name": "Quiz Wall",
+  "name": "QuizWallah",
+  "short_name": "QuizWallah",
   "description": "Interaktive Jeopardy-Quiz-App fuer Unterricht und Teams.",
   "lang": "de",
   "start_url": "./",

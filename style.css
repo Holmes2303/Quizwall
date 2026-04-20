@@ -264,6 +264,111 @@ body {
     color: var(--text-color);
 }
 
+body.is-splash-active .brand-badge {
+    display: none;
+}
+
+#splashScreen {
+    background: radial-gradient(circle at 20% 20%, rgba(247, 192, 1, 0.2), transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(241, 138, 1, 0.16), transparent 42%),
+        var(--background-color);
+    overflow-y: auto;
+}
+
+.splash-content {
+    width: 100%;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    text-align: center;
+    padding: 1rem;
+}
+
+.splash-logo {
+    width: 80vw;
+    max-width: 80vw;
+    max-height: 80vh;
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 10px 28px rgba(0, 0, 0, 0.18));
+}
+
+@media (orientation: landscape) {
+    .splash-logo {
+        width: auto;
+        height: 80vh;
+        max-height: 80vh;
+        max-width: 80vw;
+    }
+}
+
+.splash-version {
+    margin: 0;
+    font-size: clamp(1rem, 2.6vw, 1.25rem);
+    font-weight: 700;
+    color: var(--text-color);
+    opacity: 1;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65);
+    white-space: pre-wrap;
+}
+
+.splash-load {
+    width: min(68vw, 360px);
+    height: 0.7rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.splash-load-fill {
+    width: 0%;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+}
+
+.splash-load-fill.is-animating {
+    animation: splash-load-fill 3s linear forwards;
+}
+
+@keyframes splash-load-fill {
+    from { width: 0%; }
+    to { width: 100%; }
+}
+
+.splash-actions {
+    width: min(86vw, 560px);
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+}
+
+.splash-actions .btn {
+    width: min(100%, 420px);
+    min-height: 3.2rem;
+}
+
+@media (orientation: landscape) {
+    .splash-actions {
+        width: min(92vw, 760px);
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .splash-actions .btn {
+        flex: 0 1 min(38vw, 340px);
+        min-width: min(38vw, 240px);
+    }
+}
+
 .brand-badge {
     position: fixed;
     top: 1rem;
@@ -372,7 +477,7 @@ body {
 .start-menu-content h1 {
     font-size: 3rem;
     color: var(--page-heading-color);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0;
     animation: slideDown 0.5s ease;
 }
 
@@ -381,11 +486,32 @@ body {
     color: var(--page-heading-color);
 }
 
-.start-menu-brand-title {
-    display: inline-flex;
+.start-menu-brand-hero {
+    display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.38em;
+    gap: clamp(0.7rem, 1.6vw, 1rem);
+    width: fit-content;
+    margin: 0 auto 1.1rem auto;
+}
+
+.start-menu-brand-hero-logo {
+    width: clamp(96px, 10vw, 132px);
+    height: clamp(96px, 10vw, 132px);
+    object-fit: contain;
+    flex: 0 0 auto;
+}
+
+.start-menu-brand-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    text-align: left;
+}
+
+.start-menu-brand-title {
+    display: block;
     line-height: 1.05;
 }
 
@@ -403,7 +529,7 @@ body {
 .start-menu-content .subtitle {
     font-size: 1.2rem;
     color: var(--text-light);
-    margin-bottom: 1.25rem;
+    margin-bottom: 0;
 }
 
 .start-menu-content .quiz-info {
@@ -3149,10 +3275,96 @@ html.layout-desktop .quiz-sidebar {
     }
 }
 
-@media (max-width: 768px) and (orientation: landscape) {
+@media (max-width: 768px) and (orientation: landscape),
+       (hover: none) and (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
+    body:has(.custom-modal-score-adjust.custom-modal-qa) {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    body:has(.custom-modal-score-adjust.custom-modal-qa) .app-container {
+        height: auto;
+        min-height: calc(100svh + 84px);
+    }
+
+    .custom-modal-score-adjust.custom-modal-qa {
+        position: absolute !important;
+        top: 0;
+        left: 0;
+        right: 0;
+        min-height: calc(100svh + 84px);
+        height: auto !important;
+        align-items: flex-start !important;
+        overflow-y: auto !important;
+        padding-top: calc(0.35rem + env(safe-area-inset-top, 0px));
+        padding-bottom: calc(1.1rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    .custom-modal-score-adjust.custom-modal-qa > .custom-modal-card-qa {
+        width: 96vw !important;
+        max-width: 96vw !important;
+        height: auto !important;
+        max-height: none !important;
+        padding: 0.62rem 0.72rem !important;
+    }
+
     .custom-modal-score-adjust h2 {
-        font-size: clamp(0.82rem, 3.2vw, 0.98rem);
-        margin-bottom: 0.2rem;
+        font-size: clamp(0.8rem, 2.85vw, 0.94rem);
+        margin-bottom: 0.16rem;
+    }
+
+    .custom-modal-score-adjust .qa-modal-info {
+        font-size: clamp(0.78rem, 2.7vw, 0.9rem);
+        margin: 0.2rem 0 0.25rem 0;
+        line-height: 1.25;
+    }
+
+    .custom-modal-score-adjust .score-adjust-mode-toggle {
+        gap: 0.4rem;
+    }
+
+    .custom-modal-score-adjust .score-adjust-mode-toggle .btn {
+        min-height: 1.9rem;
+        padding: 0.28rem 0.5rem;
+        font-size: 0.82rem;
+    }
+
+    .custom-modal-score-adjust .score-adjust-chip-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.34rem;
+    }
+
+    .custom-modal-score-adjust .score-adjust-chip {
+        min-height: 1.85rem;
+        padding: 0.28rem 0.4rem;
+        font-size: 0.8rem;
+    }
+
+    .custom-modal-score-adjust .score-adjust-current {
+        font-size: clamp(0.84rem, 2.8vw, 0.96rem);
+        padding: 0.42rem 0.5rem;
+    }
+
+    .custom-modal-score-adjust .score-adjust-reset {
+        width: min(52vw, 260px);
+        align-self: center;
+        min-height: 1.9rem;
+        padding: 0.28rem 0.5rem;
+        font-size: 0.82rem;
+    }
+
+    .custom-modal-score-adjust .qa-modal-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.42rem;
+        margin-top: 0.15rem;
+    }
+
+    .custom-modal-score-adjust .qa-modal-actions .btn {
+        width: 100%;
+        min-height: 1.95rem;
+        padding: 0.3rem 0.5rem;
+        font-size: 0.84rem;
     }
 
     .custom-modal-answer .qa-team-list {

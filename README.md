@@ -2,7 +2,7 @@
 
 Interaktive Jeopardy-Quiz-App (Vanilla HTML/CSS/JavaScript) mit Editor, Spielstandverwaltung, KI-Import-Workflow und starkem Mobile-/Tablet-Fokus.
 
-Aktueller UI-Stand: Version `0.9d`.
+Aktueller UI-Stand: Version aus `Versioninfo.txt` (wird in Splash und Hauptmenue angezeigt).
 
 ## Highlights
 
@@ -22,9 +22,30 @@ Im Hauptmenue
 1. `🎯 Demo-Quiz laden`
 2. `🎮 Neues Spiel` waehlen.
 
+## Startscreen (Splash)
+
+- Beim Start erscheint ein Splash-Screen mit grossem App-Icon.
+- Icon-Groesse ist dynamisch:
+  - Hochformat: ca. `80%` der Fensterbreite
+  - Querformat: ca. `80%` der Fensterhoehe
+- Der "Ladebalken" laeuft etwa `3` Sekunden.
+- Danach wird der Ladebalken ausgeblendet und es erscheinen Splash-Aktionen:
+  - `Hauptmenue`
+  - `Spiel fortsetzen` (nur sichtbar, wenn ein Spielstand geladen ist)
+- `Spiel fortsetzen` fuehrt direkt zur Quiz-Wall (wie im Hauptmenue).
+
+### Screenshots
+
+nur MIT geladenem Spielstand ist der Button `Spiel fortsetzen` sichtbar:
+
+![Startscreen Landscape mit Spielstand](docs/screenshots/startscreen-landscape-with-save.png)
+
 ## Bedienung
 
 ### Hauptmenue
+
+- Kopfbereich als zentrierte Gruppe: grosses Logo links, zwei Textzeilen rechts (linksbuedig).
+- Untertitel wird dynamisch aufgebaut: `by Sigi Schulz` + Inhalt aus `Versioninfo.txt` (einzeilig angehaengt).
 
 #### Hauptaktionen
 
@@ -208,6 +229,20 @@ Die App speichert lokal im Browser (`localStorage`), u. a.:
 Im Repository ist aktuell keine separate Lizenzdatei hinterlegt.
 
 ## Changelog
+
+### 2026-04-20
+
+- Splash-Screen-Ablauf angepasst:
+  - Ladezeit von 5s auf 3s reduziert
+  - nach Ablauf Umschaltung von Ladebalken auf Buttons
+- Splash-Icon responsive auf 80% je nach Orientierung skaliert.
+- Splash-Buttons zentriert ausgerichtet; im Querformat als mittige Gruppe nebeneinander.
+- `Spiel fortsetzen` auf Splash nur bei vorhandenem Spielstand sichtbar; bei Spielstand direkter Sprung zur Quiz-Wall.
+- Hauptmenue-Brandblock ueberarbeitet:
+  - grosses Icon links neben Titel+Untertitel
+  - Titel/Untertitel linksbuendig
+  - gesamte Gruppe horizontal zentriert
+- Hauptmenue-Untertitel auf `by Sigi Schulz` umgestellt und um den Inhalt aus `Versioninfo.txt` erweitert.
 
 ### 2026-04-19
 

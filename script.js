@@ -49,10 +49,17 @@ const app = {
             this.showQuestionModal(question.question, () => {
                 // Schritt 2: Antwort + Team-Auswahl anzeigen (Punktevergabe erfolgt dort)
                 this.showAnswerModal(question.answer, () => {
+                    if (this.shouldShowVictoryCeremony()) {
+                        this.renderQuizBoard();
+                        this.updateRanking();
+                        this.state.victoryCeremonyShown = true;
+                        this.showVictoryCeremonyModal();
+                        return;
+                    }
+
                     // Schritt 3: Ranking anzeigen
                     this.showRankingModal(() => {
                         // Schritt 4: Zurück zur Wand
-                        this.state.playedQuestions.add(qId);
                         this.renderQuizBoard();
                         this.updateRanking();
                     });
@@ -287,6 +294,118 @@ const app = {
 
             actions.appendChild(btn);
             modal.content.appendChild(actions);
+
+            const applyRankingLayout = () => {
+                if (!modalRoot) return;
+
+                const card = modalRoot.querySelector('.custom-modal-card-qa');
+                if (!card) return;
+
+                const vw = window.innerWidth;
+                const vh = window.innerHeight;
+                const isLandscape = window.matchMedia('(orientation: landscape)').matches;
+                const isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+
+                const cardWidth = isLandscape ? '96vw' : '94vw';
+                const cardHeight = isLandscape ? (vh <= 500 ? '95svh' : '92svh') : '92svh';
+                const cardPadding = isLandscape ? '0.62rem 0.7rem' : '0.95rem 0.95rem';
+                const listGap = isLandscape ? '0.34rem' : '0.6rem';
+                const itemMinHeight = isLandscape ? '2rem' : '2.6rem';
+                const itemFont = isLandscape ? '0.92rem' : '1.03rem';
+                const scoreFont = isLandscape ? '0.98rem' : '1.14rem';
+                const actionHeight = isLandscape ? '2rem' : '2.55rem';
+                const actionFont = isLandscape ? '0.86rem' : '1rem';
+
+                body.style.setProperty('display', 'flex', 'important');
+                body.style.setProperty('flex-direction', 'column', 'important');
+                body.style.setProperty('flex', '1 1 auto', 'important');
+                body.style.setProperty('min-height', '0', 'important');
+                body.style.setProperty('overflow-y', 'auto', 'important');
+                body.style.setProperty('padding-right', '0', 'important');
+
+                list.style.setProperty('display', 'grid', 'important');
+                list.style.setProperty('grid-template-columns', '1fr', 'important');
+                list.style.setProperty('gap', listGap, 'important');
+                list.style.setProperty('margin', isLandscape ? '0.12rem 0' : '0.25rem 0', 'important');
+
+                list.querySelectorAll('.ranking-item').forEach((itemEl) => {
+                    itemEl.style.setProperty('display', 'flex', 'important');
+                    itemEl.style.setProperty('align-items', 'center', 'important');
+                    itemEl.style.setProperty('justify-content', 'space-between', 'important');
+                    itemEl.style.setProperty('min-height', itemMinHeight, 'important');
+                    itemEl.style.setProperty('padding', isLandscape ? '0.35rem 0.5rem' : '0.5rem 0.62rem', 'important');
+                    itemEl.style.setProperty('font-size', itemFont, 'important');
+                    itemEl.style.setProperty('border-left-width', '3px', 'important');
+                    itemEl.style.setProperty('border-radius', '0.5rem', 'important');
+                });
+
+                list.querySelectorAll('.ranking-item strong').forEach((scoreEl) => {
+                    scoreEl.style.setProperty('font-size', scoreFont, 'important');
+                    scoreEl.style.setProperty('min-width', '3ch', 'important');
+                });
+
+                list.querySelectorAll('.ranking-adjust-btn').forEach((adjustEl) => {
+                    adjustEl.style.setProperty('width', isLandscape ? '1.9rem' : '2.2rem', 'important');
+                    adjustEl.style.setProperty('min-width', isLandscape ? '1.9rem' : '2.2rem', 'important');
+                    adjustEl.style.setProperty('height', isLandscape ? '1.9rem' : '2.2rem', 'important');
+                    adjustEl.style.setProperty('min-height', isLandscape ? '1.9rem' : '2.2rem', 'important');
+                    adjustEl.style.setProperty('font-size', isLandscape ? '0.86rem' : '1rem', 'important');
+                });
+
+                actions.style.setProperty('display', 'flex', 'important');
+                actions.style.setProperty('flex-direction', 'column', 'important');
+                actions.style.setProperty('gap', isLandscape ? '0.28rem' : '0.42rem', 'important');
+                actions.style.setProperty('margin-top', isLandscape ? '0.18rem' : '0.42rem', 'important');
+
+                btn.style.setProperty('width', '100%', 'important');
+                btn.style.setProperty('min-height', actionHeight, 'important');
+                btn.style.setProperty('font-size', actionFont, 'important');
+                btn.style.setProperty('padding', isLandscape ? '0.3rem 0.55rem' : '0.45rem 0.7rem', 'important');
+
+                if (isLandscape) {
+                    actions.style.setProperty('position', 'sticky', 'important');
+                    actions.style.setProperty('bottom', '0', 'important');
+                    actions.style.setProperty('background', '#ffffff', 'important');
+                    actions.style.setProperty('padding-top', '0.16rem', 'important');
+                    actions.style.setProperty('z-index', '3', 'important');
+
+                    modalRoot.style.setProperty('position', 'absolute', 'important');
+                    modalRoot.style.setProperty('top', '0', 'important');
+                    modalRoot.style.setProperty('left', '0', 'important');
+                    modalRoot.style.setProperty('right', '0', 'important');
+                    modalRoot.style.setProperty('height', 'auto', 'important');
+                    modalRoot.style.setProperty('min-height', 'calc(100svh + 76px)', 'important');
+                    modalRoot.style.setProperty('align-items', 'flex-start', 'important');
+                    modalRoot.style.setProperty('overflow-y', 'auto', 'important');
+                    modalRoot.style.setProperty('padding-top', 'calc(0.24rem + env(safe-area-inset-top, 0px))', 'important');
+                    modalRoot.style.setProperty('padding-bottom', 'calc(0.82rem + env(safe-area-inset-bottom, 0px))', 'important');
+                }
+
+                if (!isLandscape && isTouchDevice) {
+                    actions.style.setProperty('position', 'static', 'important');
+                    actions.style.setProperty('bottom', 'auto', 'important');
+                    actions.style.setProperty('background', 'transparent', 'important');
+                    actions.style.setProperty('padding-top', '0', 'important');
+                    actions.style.setProperty('z-index', 'auto', 'important');
+
+                    modalRoot.style.setProperty('padding-top', 'calc(0.35rem + env(safe-area-inset-top, 0px))', 'important');
+                    modalRoot.style.setProperty('padding-bottom', 'calc(0.7rem + env(safe-area-inset-bottom, 0px))', 'important');
+                }
+
+                card.style.setProperty('width', cardWidth, 'important');
+                card.style.setProperty('max-width', cardWidth, 'important');
+                card.style.setProperty('height', cardHeight, 'important');
+                card.style.setProperty('max-height', cardHeight, 'important');
+                card.style.setProperty('padding', cardPadding, 'important');
+
+                const heading = card.querySelector('h2');
+                if (heading) {
+                    heading.style.setProperty('font-size', isLandscape ? 'clamp(0.95rem, 3vw, 1.1rem)' : 'clamp(1.1rem, 4.4vw, 1.3rem)', 'important');
+                    heading.style.setProperty('margin-bottom', isLandscape ? '0.2rem' : '0.35rem', 'important');
+                }
+            };
+
+            applyRankingLayout();
         },
 
         getScoreAdjustmentChipValues() {
@@ -455,6 +574,135 @@ const app = {
             actions.appendChild(applyBtn);
             actions.appendChild(cancelBtn);
             modal.content.appendChild(actions);
+
+            const applyScoreAdjustLayout = () => {
+                if (!modalRoot) return;
+
+                const card = modalRoot.querySelector('.custom-modal-card-qa');
+                if (!card) return;
+
+                const vw = window.innerWidth;
+                const vh = window.innerHeight;
+                const isLandscape = window.matchMedia('(orientation: landscape)').matches;
+                const isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+
+                const cardWidth = isLandscape ? '97vw' : '94vw';
+                const cardHeight = isLandscape
+                    ? (vh <= 480 ? '97svh' : '95svh')
+                    : '94svh';
+                const cardMaxHeight = isLandscape
+                    ? (vh <= 480 ? '97svh' : '95svh')
+                    : '94svh';
+                const cardPadding = isLandscape ? '0.52rem 0.62rem' : '0.95rem 0.95rem';
+                const chipColumns = isLandscape
+                    ? (vw >= 980 ? 6 : vw >= 840 ? 5 : 4)
+                    : (vw <= 420 ? 3 : 4);
+                const controlHeight = isLandscape ? '1.82rem' : '2.35rem';
+                const actionHeight = isLandscape ? '1.9rem' : '2.6rem';
+                const buttonFont = isLandscape ? '0.8rem' : '1rem';
+                const infoFont = isLandscape
+                    ? 'clamp(0.74rem, 2.45vw, 0.88rem)'
+                    : 'clamp(0.98rem, 3.6vw, 1.1rem)';
+
+                if (resetBtn.parentElement !== actions) {
+                    actions.insertBefore(resetBtn, applyBtn);
+                }
+
+                body.style.setProperty('display', 'flex', 'important');
+                body.style.setProperty('flex-direction', 'column', 'important');
+                body.style.setProperty('gap', isLandscape ? '0.38rem' : '0.7rem', 'important');
+                body.style.setProperty('flex', '1 1 auto', 'important');
+                body.style.setProperty('min-height', '0', 'important');
+                body.style.setProperty('overflow-y', 'auto', 'important');
+                body.style.setProperty('padding-right', '0', 'important');
+
+                actions.style.setProperty('display', isLandscape ? 'grid' : 'flex', 'important');
+                actions.style.setProperty('grid-template-columns', isLandscape ? 'repeat(3, minmax(0, 1fr))' : 'none', 'important');
+                actions.style.setProperty('flex-direction', isLandscape ? 'row' : 'column', 'important');
+                actions.style.setProperty('gap', isLandscape ? '0.38rem' : '0.62rem', 'important');
+                actions.style.setProperty('margin-top', isLandscape ? '0.18rem' : '0.45rem', 'important');
+                actions.style.setProperty('align-items', 'stretch', 'important');
+
+                [resetBtn, applyBtn, cancelBtn].forEach((btn) => {
+                    btn.style.setProperty('width', '100%', 'important');
+                    btn.style.setProperty('min-height', actionHeight, 'important');
+                    btn.style.setProperty('padding', '0.26rem 0.42rem', 'important');
+                    btn.style.setProperty('font-size', buttonFont, 'important');
+                    btn.style.setProperty('line-height', '1.1', 'important');
+                });
+
+                modeToggle.style.setProperty('display', 'grid', 'important');
+                modeToggle.style.setProperty('grid-template-columns', isLandscape ? 'repeat(2, minmax(0, 1fr))' : '1fr', 'important');
+                modeToggle.style.setProperty('gap', isLandscape ? '0.36rem' : '0.55rem', 'important');
+
+                [plusBtn, minusBtn].forEach((btn) => {
+                    btn.style.setProperty('min-height', controlHeight, 'important');
+                    btn.style.setProperty('padding', '0.25rem 0.45rem', 'important');
+                    btn.style.setProperty('font-size', buttonFont, 'important');
+                });
+
+                chips.style.setProperty('grid-template-columns', `repeat(${chipColumns}, minmax(0, 1fr))`, 'important');
+                chips.style.setProperty('gap', isLandscape ? '0.32rem' : '0.48rem', 'important');
+                chips.querySelectorAll('.score-adjust-chip').forEach((chip) => {
+                    chip.style.setProperty('min-height', controlHeight, 'important');
+                    chip.style.setProperty('padding', isLandscape ? '0.2rem 0.3rem' : '0.32rem 0.35rem', 'important');
+                    chip.style.setProperty('font-size', buttonFont, 'important');
+                });
+
+                info.style.setProperty('font-size', infoFont, 'important');
+                info.style.setProperty('margin', isLandscape ? '0.14rem 0 0.18rem 0' : '0.1rem 0 0.2rem 0', 'important');
+                info.style.setProperty('line-height', isLandscape ? '1.2' : '1.3', 'important');
+
+                scorePreview.style.setProperty('font-size', isLandscape ? 'clamp(0.8rem, 2.5vw, 0.92rem)' : 'clamp(0.9rem, 3vw, 1rem)', 'important');
+                scorePreview.style.setProperty('padding', isLandscape ? '0.34rem 0.45rem' : '0.52rem 0.58rem', 'important');
+
+                if (isLandscape) {
+                    actions.style.setProperty('position', 'sticky', 'important');
+                    actions.style.setProperty('bottom', '0', 'important');
+                    actions.style.setProperty('background', '#ffffff', 'important');
+                    actions.style.setProperty('padding-top', '0.18rem', 'important');
+                    actions.style.setProperty('z-index', '3', 'important');
+
+                    modalRoot.style.setProperty('position', 'absolute', 'important');
+                    modalRoot.style.setProperty('top', '0', 'important');
+                    modalRoot.style.setProperty('left', '0', 'important');
+                    modalRoot.style.setProperty('right', '0', 'important');
+                    modalRoot.style.setProperty('height', 'auto', 'important');
+                    modalRoot.style.setProperty('min-height', 'calc(100svh + 84px)', 'important');
+                    modalRoot.style.setProperty('align-items', 'flex-start', 'important');
+                    modalRoot.style.setProperty('overflow-y', 'auto', 'important');
+                    modalRoot.style.setProperty('padding-top', 'calc(0.22rem + env(safe-area-inset-top, 0px))', 'important');
+                    modalRoot.style.setProperty('padding-bottom', 'calc(0.86rem + env(safe-area-inset-bottom, 0px))', 'important');
+                }
+
+                if (!isLandscape && isTouchDevice) {
+                    actions.style.setProperty('position', 'static', 'important');
+                    actions.style.setProperty('bottom', 'auto', 'important');
+                    actions.style.setProperty('background', 'transparent', 'important');
+                    actions.style.setProperty('padding-top', '0', 'important');
+                    actions.style.setProperty('z-index', 'auto', 'important');
+
+                    body.style.setProperty('flex', '1 1 auto', 'important');
+                    body.style.setProperty('overflow-y', 'auto', 'important');
+
+                    modalRoot.style.setProperty('padding-top', 'calc(0.35rem + env(safe-area-inset-top, 0px))', 'important');
+                    modalRoot.style.setProperty('padding-bottom', 'calc(0.7rem + env(safe-area-inset-bottom, 0px))', 'important');
+                }
+
+                card.style.setProperty('width', cardWidth, 'important');
+                card.style.setProperty('max-width', cardWidth, 'important');
+                card.style.setProperty('height', cardHeight, 'important');
+                card.style.setProperty('max-height', cardMaxHeight, 'important');
+                card.style.setProperty('padding', cardPadding, 'important');
+
+                const heading = card.querySelector('h2');
+                if (heading) {
+                    heading.style.setProperty('font-size', isLandscape ? 'clamp(0.76rem, 2.5vw, 0.9rem)' : 'clamp(0.95rem, 4vw, 1.08rem)', 'important');
+                    heading.style.setProperty('margin-bottom', isLandscape ? '0.1rem' : '0.2rem', 'important');
+                }
+            };
+
+            applyScoreAdjustLayout();
 
             renderMode();
             renderCurrent();
@@ -630,10 +878,10 @@ const app = {
         settingsReturnScreenId: 'startMenu',
         settingsSessionSnapshot: null,
         defaultBrandLogoSrc: null,
-        defaultBrandName: 'ISG Quiz Wall',
+        defaultBrandName: 'QuizWallah',
         brandLogoDataUrl: null,
-        brandName: 'ISG Quiz Wall',
-        quizTitle: 'Quiz Wall',
+        brandName: 'QuizWallah',
+        quizTitle: 'QuizWallah',
         game: null, // Aktives Spiel mit Teams und Fortschritt
         selectedCategoryIndex: null,
         quickTeamNames: [],
@@ -641,20 +889,118 @@ const app = {
             categories: (typeof defaultQuizData !== 'undefined') ? defaultQuizData.categories : [],
             teams: []
         },
+        victoryCeremonyShown: false,
         playedQuestions: new Set(),
         currentQuestion: null
     },
 
     // ============ INITIALISIERUNG ============
     init() {
-        console.log("Quiz Wall wird gestartet...");
+        console.log("QuizWallah wird gestartet...");
         this.initBranding();
         this.loadColorSettings();
         this.loadGameState();
         this.bindStaticUiHandlers();
         this.bindResponsiveUiHandlers();
+        this.showSplashThenStart();
+    },
+
+    async showSplashThenStart() {
+        this.showScreen('splashScreen');
+        document.body.classList.add('is-splash-active');
+
+        const loadFill = document.getElementById('splashLoadFill');
+        const loadBar = document.querySelector('#splashScreen .splash-load');
+        const splashActions = document.getElementById('splashActions');
+
+        if (loadBar) {
+            loadBar.classList.remove('hidden');
+        }
+
+        if (splashActions) {
+            splashActions.classList.add('hidden');
+        }
+
+        this.updateSplashContinueButtonState();
+
+        if (loadFill) {
+            loadFill.classList.remove('is-animating');
+            void loadFill.offsetWidth;
+            loadFill.classList.add('is-animating');
+        }
+
+        await this.loadSplashVersionText();
+
+        window.setTimeout(() => {
+            if (loadBar) {
+                loadBar.classList.add('hidden');
+            }
+
+            this.updateSplashContinueButtonState();
+
+            if (splashActions) {
+                splashActions.classList.remove('hidden');
+            }
+        }, 3000);
+    },
+
+    updateSplashContinueButtonState() {
+        const splashContinueBtn = document.getElementById('splashContinueBtn');
+        if (!splashContinueBtn) return;
+
+        const hasGame = this.hasActiveGame();
+        // Primär: Button nur bei vorhandenem Spielstand anzeigen.
+        splashContinueBtn.classList.toggle('hidden', !hasGame);
+        // Fallback: selbst wenn sichtbar, ohne Spielstand deaktiviert und funktionslos.
+        splashContinueBtn.disabled = !hasGame;
+        splashContinueBtn.setAttribute('aria-disabled', hasGame ? 'false' : 'true');
+        splashContinueBtn.title = hasGame ? '' : 'Kein Spielstand geladen';
+    },
+
+    leaveSplashToStartMenu() {
+        document.body.classList.remove('is-splash-active');
         this.showScreen('startMenu');
         this.updateQuizInfo();
+    },
+
+    leaveSplashToContinueGame() {
+        if (!this.hasActiveGame()) {
+            this.leaveSplashToStartMenu();
+            return;
+        }
+
+        document.body.classList.remove('is-splash-active');
+        this.continueGame();
+    },
+
+    async loadSplashVersionText() {
+        const versionElement = document.getElementById('splashVersion');
+        const startMenuSubtitle = document.getElementById('startMenuSubtitle');
+        const subtitleBase = 'by Sigi Schulz';
+
+        if (!versionElement) return;
+
+        try {
+            const response = await fetch('./Versioninfo.txt', { cache: 'no-store' });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const text = (await response.text()).trim();
+            const singleLineVersion = text.replace(/\s*\r?\n\s*/g, ' ').trim();
+            const versionText = singleLineVersion || 'Version unbekannt';
+
+            versionElement.textContent = versionText;
+
+            if (startMenuSubtitle) {
+                startMenuSubtitle.textContent = `${subtitleBase} ${versionText}`;
+            }
+        } catch {
+            versionElement.textContent = 'Version unbekannt';
+            if (startMenuSubtitle) {
+                startMenuSubtitle.textContent = `${subtitleBase} Version unbekannt`;
+            }
+        }
     },
 
     bindResponsiveUiHandlers() {
@@ -743,6 +1089,16 @@ const app = {
         const cancelQuickGame = document.getElementById('cancelQuickGame');
         if (cancelQuickGame) {
             cancelQuickGame.addEventListener('click', () => this.goToStartMenu());
+        }
+
+        const splashMainMenuBtn = document.getElementById('splashMainMenuBtn');
+        if (splashMainMenuBtn) {
+            splashMainMenuBtn.addEventListener('click', () => this.leaveSplashToStartMenu());
+        }
+
+        const splashContinueBtn = document.getElementById('splashContinueBtn');
+        if (splashContinueBtn) {
+            splashContinueBtn.addEventListener('click', () => this.leaveSplashToContinueGame());
         }
 
         const brandNameInput = document.getElementById('brandNameInput');
@@ -860,7 +1216,7 @@ const app = {
         const badgeLabel = document.querySelector('.brand-badge span');
         if (!badgeLabel) return;
 
-        const fallbackName = this.state.defaultBrandName || 'ISG Quiz Wall';
+        const fallbackName = this.state.defaultBrandName || 'QuizWallah';
         const cleaned = typeof rawName === 'string' ? rawName.trim() : '';
         const resolvedName = cleaned || fallbackName;
 
@@ -1320,6 +1676,7 @@ const app = {
             this.state.editor.categories = imported.categories;
             this.state.editor.teams = [];
             this.state.game = null;
+            this.state.victoryCeremonyShown = false;
             this.state.playedQuestions = new Set();
             this.state.currentQuestion = null;
             this.state.quickTeamNames = [];
@@ -1481,6 +1838,7 @@ const app = {
 
         this.state.editor.teams = teams.map(team => ({ name: team.name }));
         this.state.game = { teams, playedQuestions: [] };
+        this.state.victoryCeremonyShown = false;
         this.state.playedQuestions = new Set();
         this.state.currentQuestion = null;
         this.saveGameState();
@@ -1576,6 +1934,7 @@ const app = {
         this.state.editor.categories = categories;
         this.state.editor.teams = [];
         this.state.game = null;
+        this.state.victoryCeremonyShown = false;
         this.state.playedQuestions = new Set();
         this.state.currentQuestion = null;
         this.state.quickTeamNames = [];
@@ -1602,7 +1961,8 @@ const app = {
             teams: teams,
             playedQuestions: []
         };
-        
+
+        this.state.victoryCeremonyShown = false;
         this.state.playedQuestions = new Set();
         this.saveGameState();
         this.continueGame();
@@ -1671,8 +2031,9 @@ const app = {
                 }
 
                 this.state.editor.categories = categories;
-                this.state.quizTitle = parsed.quizTitle || parsed.title || 'Quiz Wall';
+                this.state.quizTitle = parsed.quizTitle || parsed.title || 'QuizWallah';
                 this.state.game = null;
+                this.state.victoryCeremonyShown = false;
                 this.state.playedQuestions = new Set();
                 this.state.currentQuestion = null;
                 this.state.selectedCategoryIndex = null;
@@ -1694,6 +2055,7 @@ const app = {
             this.state.editor.categories = defaultQuizData.categories;
             this.state.quizTitle = 'Demo-Quiz';
             this.state.game = null;
+            this.state.victoryCeremonyShown = false;
             this.state.playedQuestions = new Set();
             this.saveGameState();
             this.updateQuizInfo();
@@ -1776,14 +2138,264 @@ const app = {
         this.state.game = null;
         this.state.playedQuestions = new Set();
         this.state.currentQuestion = null;
+        this.state.victoryCeremonyShown = false;
         this.state.quickTeamNames = [];
         this.state.editor.teams = [];
         this.state.editor.categories = [];
-        this.state.quizTitle = 'Quiz Wall';
+        this.state.quizTitle = 'QuizWallah';
         this.saveGameState();
 
         this.showScreen('gameSetup');
         this.renderGameSetup();
+    },
+
+    getTotalQuestionCount() {
+        const categories = Array.isArray(this.state.editor.categories) ? this.state.editor.categories : [];
+        return categories.reduce((sum, category) => {
+            const count = Array.isArray(category?.questions) ? category.questions.length : 0;
+            return sum + count;
+        }, 0);
+    },
+
+    shouldShowVictoryCeremony() {
+        if (this.state.victoryCeremonyShown) return false;
+        if (!this.hasActiveGame()) return false;
+
+        const totalQuestions = this.getTotalQuestionCount();
+        if (totalQuestions <= 0) return false;
+
+        return this.state.playedQuestions.size >= totalQuestions;
+    },
+
+    finishGameAndReturnToMenu() {
+        this.state.game = null;
+        this.state.playedQuestions = new Set();
+        this.state.currentQuestion = null;
+        this.state.quickTeamNames = [];
+        this.state.victoryCeremonyShown = false;
+        this.saveGameState();
+        this.updateQuizInfo();
+        this.showScreen('startMenu');
+    },
+
+    showVictoryCeremonyModal() {
+        if (!this.hasActiveGame()) return;
+
+        const sorted = [...this.state.game.teams].sort((a, b) => b.score - a.score);
+        const podiumTeams = sorted.slice(0, 3);
+        if (podiumTeams.length === 0) {
+            this.finishGameAndReturnToMenu();
+            return;
+        }
+
+        const modal = this.createModal('Siegerehrung', { layout: 'qa' });
+        const modalRoot = modal.content.closest('.custom-modal');
+        modalRoot?.classList.add('custom-modal-victory');
+        const isLandscape = window.matchMedia('(orientation: landscape)').matches;
+        const isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+        const viewportHeight = window.innerHeight;
+        const compactLandscape = isLandscape && isTouchDevice && viewportHeight <= 560;
+        let rebuildTimer = null;
+        let listenersCleaned = false;
+
+        const cleanupVictoryModalListeners = () => {
+            if (listenersCleaned) return;
+            listenersCleaned = true;
+            if (rebuildTimer) {
+                window.clearTimeout(rebuildTimer);
+                rebuildTimer = null;
+            }
+            window.removeEventListener('orientationchange', scheduleVictoryModalRebuild);
+            window.removeEventListener('resize', scheduleVictoryModalRebuild);
+            observer.disconnect();
+        };
+
+        const scheduleVictoryModalRebuild = () => {
+            if (!modalRoot || !document.body.contains(modalRoot)) {
+                cleanupVictoryModalListeners();
+                return;
+            }
+
+            if (rebuildTimer) {
+                window.clearTimeout(rebuildTimer);
+            }
+
+            rebuildTimer = window.setTimeout(() => {
+                if (!modalRoot || !document.body.contains(modalRoot)) {
+                    cleanupVictoryModalListeners();
+                    return;
+                }
+
+                cleanupVictoryModalListeners();
+                modal.close();
+                this.showVictoryCeremonyModal();
+            }, 180);
+        };
+
+        const observer = new MutationObserver(() => {
+            if (!modalRoot || !document.body.contains(modalRoot)) {
+                cleanupVictoryModalListeners();
+            }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+        window.addEventListener('orientationchange', scheduleVictoryModalRebuild, { passive: true });
+        window.addEventListener('resize', scheduleVictoryModalRebuild, { passive: true });
+
+        const body = document.createElement('div');
+        body.className = 'qa-modal-body';
+        body.style.display = 'flex';
+        body.style.flexDirection = 'column';
+        body.style.gap = compactLandscape ? '0.35rem' : '0.55rem';
+
+        const podium = document.createElement('div');
+        podium.style.display = 'grid';
+        podium.style.gridTemplateColumns = podiumTeams.length === 3
+            ? 'repeat(3, minmax(0, 1fr))'
+            : `repeat(${Math.max(1, podiumTeams.length)}, minmax(0, 1fr))`;
+        podium.style.gap = compactLandscape ? '0.35rem' : (isLandscape ? '0.65rem' : '0.5rem');
+        podium.style.minHeight = compactLandscape
+            ? 'clamp(140px, 26vh, 190px)'
+            : (isLandscape ? 'clamp(220px, 44vh, 360px)' : 'clamp(220px, 38vh, 320px)');
+        podium.style.alignItems = 'end';
+
+        // Fixed podium positions; reveal strictly in this order: 3 -> 2 -> 1.
+        const rankedByPlace = podiumTeams.map((team, idx) => ({ team, place: idx + 1 }));
+        const displayOrder = (rankedByPlace.length === 3)
+            ? [rankedByPlace[1], rankedByPlace[0], rankedByPlace[2]]
+            : rankedByPlace;
+        const revealPlaces = rankedByPlace.length === 3
+            ? [3, 2, 1]
+            : [...rankedByPlace].map((entry) => entry.place).reverse();
+
+        const medalForPlace = (place) => {
+            if (place === 1) return '🏆';
+            if (place === 2) return '🥈';
+            return '🥉';
+        };
+
+        const rowsByPlace = new Map();
+        displayOrder.forEach(({ team, place }) => {
+            const isWinner = place === 1;
+            const row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.flexDirection = 'column';
+            row.style.alignItems = 'center';
+            row.style.justifyContent = 'center';
+            row.style.textAlign = 'center';
+            row.style.gap = compactLandscape ? '0.24rem' : (isLandscape ? '0.38rem' : '0.42rem');
+            row.style.padding = isLandscape
+                ? (isWinner ? '0.78rem 0.55rem' : '0.62rem 0.45rem')
+                : (isWinner ? '0.72rem 0.72rem' : '0.58rem 0.62rem');
+            row.style.minHeight = compactLandscape
+                ? (place === 1 ? '8.1rem' : place === 2 ? '7rem' : '5.9rem')
+                : isLandscape
+                ? (place === 1 ? '12rem' : place === 2 ? '10rem' : '8.6rem')
+                : (place === 1 ? '10.8rem' : place === 2 ? '9.2rem' : '7.8rem');
+            row.style.border = isWinner ? '2px solid var(--primary-color)' : '1px solid var(--border-color)';
+            row.style.borderRadius = '0.6rem';
+            row.style.background = isWinner ? 'rgba(247, 192, 1, 0.12)' : '#fff';
+            row.style.boxShadow = isWinner ? '0 6px 18px rgba(247, 192, 1, 0.22)' : 'none';
+            row.style.opacity = '0';
+            row.style.transform = compactLandscape
+                ? 'translateX(8px) scale(0.98)'
+                : (isLandscape ? 'translateX(12px) scale(0.98)' : 'translateY(12px) scale(0.98)');
+            row.style.transition = 'opacity 420ms ease, transform 420ms ease';
+
+            const medal = document.createElement('span');
+            medal.textContent = medalForPlace(place);
+            medal.style.fontSize = compactLandscape ? (isWinner ? '1.28rem' : '1.05rem') : (isWinner ? '1.6rem' : '1.25rem');
+            medal.style.textAlign = 'center';
+
+            const name = document.createElement('strong');
+            name.textContent = `${place}. ${team.name}`;
+            name.style.fontSize = compactLandscape ? (isWinner ? '0.94rem' : '0.82rem') : (isWinner ? '1.18rem' : '1rem');
+            name.style.fontWeight = isWinner ? '800' : '700';
+            name.style.lineHeight = '1.2';
+
+            const score = document.createElement('span');
+            score.textContent = `${team.score} Punkte`;
+            score.style.fontWeight = isWinner ? '800' : '700';
+            score.style.fontSize = compactLandscape ? (isWinner ? '0.88rem' : '0.78rem') : (isWinner ? '1.08rem' : '0.95rem');
+
+            row.appendChild(medal);
+            row.appendChild(name);
+            row.appendChild(score);
+            podium.appendChild(row);
+            rowsByPlace.set(place, row);
+        });
+
+        body.appendChild(podium);
+        modal.content.appendChild(body);
+
+        const actions = document.createElement('div');
+        actions.className = 'qa-modal-actions';
+        actions.style.marginTop = '0.4rem';
+
+        const finishBtn = document.createElement('button');
+        finishBtn.className = 'btn btn-primary';
+        finishBtn.textContent = 'Spiel zurücksetzen & Hauptmenü';
+        finishBtn.onclick = () => {
+            cleanupVictoryModalListeners();
+            modal.close();
+            this.finishGameAndReturnToMenu();
+        };
+
+        actions.appendChild(finishBtn);
+        modal.content.appendChild(actions);
+
+        const card = modalRoot?.querySelector('.custom-modal-card-qa');
+        if (modalRoot && card) {
+            const width = compactLandscape ? '90vw' : (isLandscape ? '98vw' : '94vw');
+            const height = compactLandscape ? '90svh' : (isLandscape ? '94svh' : '88svh');
+
+            if (compactLandscape) {
+                modalRoot.style.setProperty('align-items', 'center', 'important');
+                modalRoot.style.setProperty('justify-content', 'center', 'important');
+                modalRoot.style.setProperty('padding', '5svh 5vw', 'important');
+            } else if (isLandscape) {
+                modalRoot.style.setProperty('position', 'absolute', 'important');
+                modalRoot.style.setProperty('top', '0', 'important');
+                modalRoot.style.setProperty('left', '0', 'important');
+                modalRoot.style.setProperty('right', '0', 'important');
+                modalRoot.style.setProperty('height', 'auto', 'important');
+                modalRoot.style.setProperty('min-height', 'calc(100svh + 70px)', 'important');
+                modalRoot.style.setProperty('align-items', 'flex-start', 'important');
+                modalRoot.style.setProperty('overflow-y', 'auto', 'important');
+                modalRoot.style.setProperty('padding-top', 'calc(0.24rem + env(safe-area-inset-top, 0px))', 'important');
+                modalRoot.style.setProperty('padding-bottom', 'calc(0.82rem + env(safe-area-inset-bottom, 0px))', 'important');
+            }
+
+            card.style.setProperty('width', width, 'important');
+            card.style.setProperty('max-width', width, 'important');
+            card.style.setProperty('height', height, 'important');
+            card.style.setProperty('max-height', height, 'important');
+            card.style.setProperty('padding', compactLandscape ? '0.5rem 0.6rem' : (isLandscape ? '0.75rem 0.85rem' : '1rem'), 'important');
+
+            const heading = card.querySelector('h2');
+            if (heading) {
+                heading.style.setProperty('font-size', compactLandscape ? 'clamp(1.28rem, 4.9vw, 1.9rem)' : 'clamp(1.5rem, 5.4vw, 3rem)', 'important');
+                heading.style.setProperty('margin-bottom', compactLandscape ? '0.22rem' : '0.45rem', 'important');
+                heading.style.setProperty('line-height', '1.05', 'important');
+            }
+        }
+
+        const firstRevealDelay = 300;
+        const gap32 = Math.round(520 * 1.5);
+        const gap21 = gap32 * 2;
+
+        revealPlaces.forEach((place, idx) => {
+            const row = rowsByPlace.get(place);
+            if (!row) return;
+
+            let delay = firstRevealDelay;
+            if (idx === 1) delay += gap32;
+            if (idx === 2) delay += gap32 + gap21;
+
+            window.setTimeout(() => {
+                row.style.opacity = '1';
+                row.style.transform = 'translateX(0) translateY(0) scale(1)';
+            }, delay);
+        });
     },
 
     resetTeams() {
@@ -1796,13 +2408,7 @@ const app = {
             return;
         }
 
-        this.state.game = null;
-        this.state.playedQuestions = new Set();
-        this.state.currentQuestion = null;
-        this.state.quickTeamNames = [];
-        this.saveGameState();
-        this.updateQuizInfo();
-        this.showScreen('startMenu');
+        this.finishGameAndReturnToMenu();
         alert('Spiel wurde zurückgesetzt.');
     },
 
@@ -1811,7 +2417,7 @@ const app = {
         const board = document.getElementById('quizBoard');
         const header = document.getElementById('categoryHeader');
         const titleDisplay = document.getElementById('quizTitleDisplay');
-        if (titleDisplay) titleDisplay.textContent = this.state.quizTitle || 'Quiz Wall';
+        if (titleDisplay) titleDisplay.textContent = this.state.quizTitle || 'QuizWallah';
         if (!board || !header) return;
 
         board.innerHTML = '';
@@ -1975,7 +2581,7 @@ const app = {
         const titleInput = document.getElementById('quizTitle');
         titleInput.value = this.state.quizTitle;
         titleInput.oninput = (event) => {
-            this.state.quizTitle = event.target.value.trim() || 'Quiz Wall';
+            this.state.quizTitle = event.target.value.trim() || 'QuizWallah';
         };
 
         this.renderPointsSchemaControls();
@@ -2886,23 +3492,46 @@ const app = {
         const data = localStorage.getItem('quizwall_game');
         if (data) {
             const parsed = JSON.parse(data);
+
+            const parsedTeams = Array.isArray(parsed?.game?.teams)
+                ? parsed.game.teams
+                : (Array.isArray(parsed?.teams)
+                    ? parsed.teams
+                    : (Array.isArray(parsed?.game?.game?.teams) ? parsed.game.game.teams : null));
+
+            const parsedCategories = Array.isArray(parsed?.categories)
+                ? parsed.categories
+                : (Array.isArray(parsed?.game?.categories)
+                    ? parsed.game.categories
+                    : (Array.isArray(parsed?.game?.game?.categories) ? parsed.game.game.categories : null));
+
+            const parsedPlayed = Array.isArray(parsed?.played)
+                ? parsed.played
+                : (Array.isArray(parsed?.game?.playedQuestions)
+                    ? parsed.game.playedQuestions
+                    : (Array.isArray(parsed?.game?.game?.playedQuestions) ? parsed.game.game.playedQuestions : []));
+
             // Teams und Punkte übernehmen
-            if (parsed.game && parsed.game.teams) {
+            if (Array.isArray(parsedTeams) && parsedTeams.length > 0) {
                 this.state.game = {
-                    teams: parsed.game.teams.map(t => ({ id: t.id, name: t.name, score: t.score || 0 })),
+                    teams: parsedTeams.map((t, idx) => ({
+                        id: Number.isInteger(t?.id) ? t.id : idx,
+                        name: t?.name || `Team ${idx + 1}`,
+                        score: Number.isFinite(t?.score) ? t.score : 0
+                    })),
                 };
+                this.state.victoryCeremonyShown = false;
             } else {
                 this.state.game = null;
+                this.state.victoryCeremonyShown = false;
             }
             // Gespielte Fragen übernehmen
-            this.state.playedQuestions = new Set(parsed.played || []);
+            this.state.playedQuestions = new Set(parsedPlayed || []);
             // Quiz-Titel übernehmen
-            this.state.quizTitle = parsed.quizTitle || 'Quiz Wall';
+            this.state.quizTitle = parsed.quizTitle || 'QuizWallah';
             // Quizdaten (Kategorien/Fragen) übernehmen, falls vorhanden
-            if (Array.isArray(parsed.categories)) {
-                this.state.editor.categories = parsed.categories;
-            } else if (parsed.game && parsed.game.categories) {
-                this.state.editor.categories = parsed.game.categories;
+            if (Array.isArray(parsedCategories)) {
+                this.state.editor.categories = parsedCategories;
             }
             // Nach dem Laden alles neu rendern
             this.renderQuizBoard();
@@ -2969,6 +3598,7 @@ app.editor = {
 
         // Team-Auswahl gehört zum Spiel-Flow, nicht in den Quiz-Editor.
         app.state.game = null;
+        app.state.victoryCeremonyShown = false;
         app.state.playedQuestions = new Set();
         app.state.currentQuestion = null;
         app.saveGameState();
@@ -3006,15 +3636,38 @@ app.handleGameUpload = function(event) {
                 return;
             }
 
+            const hasTeamData =
+                (data.game && Array.isArray(data.game.teams) && data.game.teams.length > 0)
+                || (Array.isArray(data.teams) && data.teams.length > 0)
+                || (data.game && data.game.game && Array.isArray(data.game.game.teams) && data.game.game.teams.length > 0);
+
+            if (!hasTeamData) {
+                alert('Die Datei enthält keinen gültigen Team-Spielstand und kann nicht als Spielstand geladen werden.');
+                return;
+            }
+
             // Spielstand in localStorage speichern und laden
             localStorage.setItem('quizwall_game', JSON.stringify(data));
             this.loadGameState();
+
+            if (!this.hasActiveGame()) {
+                alert('Spielstand konnte nicht vollständig geladen werden (keine Teams gefunden).');
+                return;
+            }
+
             alert('Spielstand erfolgreich geladen!');
         } catch (err) {
             alert('Fehler beim Laden des Spielstands: ' + err.message);
         }
     };
+    reader.onerror = () => {
+        alert('Fehler beim Lesen der Spielstand-Datei.');
+    };
     reader.readAsText(file);
+
+    // Wichtig: erlaubt das erneute Auswählen derselben Datei,
+    // damit onchange bei wiederholten Ladeversuchen erneut auslöst.
+    event.target.value = '';
 };
 
 // ============ SPIELSTAND ZURÜCKSETZEN ============
@@ -3050,6 +3703,7 @@ app.showResetConfirmation = function() {
         // Alle Fragen wieder als unbeantwortet markieren
         this.state.playedQuestions = new Set();
         this.state.currentQuestion = null;
+        this.state.victoryCeremonyShown = false;
         (this.state.editor.categories || []).forEach(category => {
             (category.questions || []).forEach(question => {
                 if (Object.prototype.hasOwnProperty.call(question, 'answered')) {

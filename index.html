@@ -7,26 +7,45 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Quiz Wall">
-    <title>Quiz Wall - Jeopardy Style</title>
+    <meta name="apple-mobile-web-app-title" content="QuizWallah">
+    <title>QuizWallah - Jeopardy Style</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="brand-badge">
-        <img src="ISG%20Logo.png" alt="ISG Logo">
-        <span>ISG Quiz Wall</span>
+        <img src="QuizWalla%20ingame%20Symbol2.png" alt="QuizWallah Logo">
+        <span>QuizWallah</span>
     </div>
     <div id="app" class="app-container">
+        <!-- Splash Screen -->
+        <div id="splashScreen" class="screen">
+            <div class="splash-content">
+                <img src="QuizWallah%20Icon%2002.png" alt="QuizWallah Icon" class="splash-logo">
+                <p id="splashVersion" class="splash-version">Version wird geladen ...</p>
+                <div class="splash-load" aria-hidden="true">
+                    <div id="splashLoadFill" class="splash-load-fill"></div>
+                </div>
+                <div id="splashActions" class="splash-actions hidden">
+                    <button id="splashMainMenuBtn" class="btn btn-primary btn-large" type="button">Hauptmenü</button>
+                    <button id="splashContinueBtn" class="btn btn-primary btn-large" type="button">Spiel fortsetzen</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Start Menu Screen -->
-        <div id="startMenu" class="screen">
+        <div id="startMenu" class="screen hidden">
             <div class="start-menu-content">
-                <h1 class="start-menu-brand-title">
-                    <img id="startMenuBrandLogo" src="ISG%20Logo.png" alt="Logo">
-                    <span id="startMenuBrandTitle">ISG Quiz Wall</span>
-                </h1>
-                <p class="subtitle">Jeopardy-Stil Spiel auf Basis eines Quiz V 0.9f</p>
+                <div class="start-menu-brand-hero">
+                    <img id="startMenuBrandLogo" src="QuizWalla%20ingame%20Symbol2.png" alt="Logo" class="start-menu-brand-hero-logo">
+                    <div class="start-menu-brand-text">
+                        <h1 class="start-menu-brand-title">
+                            <span id="startMenuBrandTitle">QuizWallah</span>
+                        </h1>
+                        <p id="startMenuSubtitle" class="subtitle">by Sigi Schulz</p>
+                    </div>
+                </div>
                 <p id="quizInfo" class="quiz-info"></p>
 
                 <div class="main-menu-actions">
@@ -175,7 +194,7 @@
         <div id="quizWall" class="screen hidden">
             <div class="quiz-wall-container">
                 <div class="quiz-header">
-                    <h2 id="quizTitleDisplay">Quiz Wall</h2>
+                    <h2 id="quizTitleDisplay">QuizWallah</h2>
                 </div>
                 <div class="quiz-main-content">
                                     <div class="quiz-board-panel">
@@ -464,10 +483,10 @@
                         <h3>Name und Logo</h3>
                         <div class="settings-brand-name-row">
                             <label for="brandNameInput">Name:</label>
-                            <input type="text" id="brandNameInput" maxlength="50" value="ISG Quiz Wall" placeholder="Name der Webseite">
+                            <input type="text" id="brandNameInput" maxlength="50" value="QuizWallah" placeholder="Name der Webseite">
                         </div>
                         <div class="settings-logo-layout">
-                            <img id="settingsLogoPreview" class="settings-logo-preview" src="ISG%20Logo.png" alt="Logo Vorschau">
+                            <img id="settingsLogoPreview" class="settings-logo-preview" src="QuizWalla%20ingame%20Symbol2.png" alt="Logo Vorschau">
                             <div class="settings-actions-row settings-actions-bottom">
                                 <button class="btn btn-secondary" onclick="document.getElementById('logoFileInput').click()">Logo laden</button>
                                 <button class="btn btn-secondary" onclick="app.applyThemeFromLogo()">Farben aus Logo</button>
