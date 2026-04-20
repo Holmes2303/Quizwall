@@ -1,5 +1,5 @@
-const CORE_CACHE = 'quizwall-core-v31';
-const RUNTIME_CACHE = 'quizwall-runtime-v31';
+const CORE_CACHE = 'quizwall-core-v32';
+const RUNTIME_CACHE = 'quizwall-runtime-v32';
 
 // Keep install light for faster first meaningful paint.
 const CORE_ASSETS = [
@@ -12,6 +12,9 @@ const CORE_ASSETS = [
   './manifest-v20260420.webmanifest',
   './QuizWallah%20Icon%2002.png',
   './QuizWalla%20ingame%20Symbol2.png',
+  './apple-touch-icon-v20260420.png',
+  './apple-touch-icon.png',
+  './apple-touch-icon-precomposed.png',
   './icons/icon-192-v20260420.png',
   './icons/icon-512-v20260420.png',
   './icons/apple-touch-icon-v20260420.png'
