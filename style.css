@@ -3197,18 +3197,18 @@ html.layout-desktop .quiz-sidebar {
 
     .custom-modal-ranking.custom-modal-qa > .custom-modal-card-qa {
         --ranking-mobile-safe-height: calc(100svh - 0.9rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
-        width: 92vw !important;
+        width: 97vw !important;
         height: min(var(--ranking-card-height, 82vh), var(--ranking-mobile-safe-height)) !important;
-        max-width: 92vw !important;
+        max-width: 97vw !important;
         max-height: min(var(--ranking-card-height, 82vh), var(--ranking-mobile-safe-height)) !important;
-        padding: 0.9rem !important;
+        padding: 0.8rem !important;
     }
 
     .custom-modal-ranking.custom-modal-qa {
         align-items: flex-start !important;
         overflow-y: auto !important;
-        padding-top: calc(0.45rem + env(safe-area-inset-top, 0px));
-        padding-bottom: calc(0.45rem + env(safe-area-inset-bottom, 0px));
+        padding-top: calc(0.2rem + env(safe-area-inset-top, 0px));
+        padding-bottom: calc(0.2rem + env(safe-area-inset-bottom, 0px));
     }
 
     .custom-modal-ranking h2 {
@@ -3227,10 +3227,12 @@ html.layout-desktop .quiz-sidebar {
 
     .custom-modal-ranking .qa-modal-body {
         padding-right: 0.2rem;
+        width: 100%;
     }
 
     .custom-modal-ranking .ranking-list {
         margin: 0.35rem 0;
+        width: 100%;
     }
 
     .custom-modal-ranking .ranking-item {
@@ -3238,6 +3240,7 @@ html.layout-desktop .quiz-sidebar {
         margin-bottom: 0.4rem;
         font-size: var(--ranking-item-font-size, clamp(0.9rem, 3.9vw, 1.02rem));
         border-left-width: 3px;
+        width: 100%;
     }
 
     .custom-modal-ranking .ranking-adjust-btn {
@@ -3427,11 +3430,11 @@ html.layout-desktop .quiz-sidebar {
     }
 
     .custom-modal-ranking.custom-modal-qa > .custom-modal-card-qa {
-        width: 96vw !important;
+        width: var(--modal-card-width, 92vw) !important;
         height: var(--ranking-card-height, 82vh) !important;
-        max-width: 96vw !important;
+        max-width: var(--modal-card-width, 92vw) !important;
         max-height: var(--ranking-card-height, 82vh) !important;
-        padding: 0.6rem !important;
+        padding: 0.36rem !important;
     }
 
     .custom-modal-ranking .ranking-list {
@@ -3466,6 +3469,120 @@ html.layout-desktop .quiz-sidebar {
         font-size: 0.86rem;
         padding: 0.28rem 0.5rem;
     }
+}
+
+/* Unified modal sizing overrides (high priority) */
+.custom-modal.custom-modal-responsive {
+    --modal-card-width: 92vw;
+    --modal-card-height: 92svh;
+    --modal-title-font-size: clamp(1.6rem, 5vw, 3.4rem);
+    --modal-content-font-size: clamp(1rem, 2.8vw, 2.15rem);
+    --modal-button-font-size: clamp(0.95rem, 2.2vw, 1.7rem);
+}
+
+.custom-modal.custom-modal-responsive > div {
+    width: var(--modal-card-width) !important;
+    height: var(--modal-card-height) !important;
+    max-width: var(--modal-card-width) !important;
+    max-height: var(--modal-card-height) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-sizing: border-box;
+}
+
+.custom-modal.custom-modal-responsive h2 {
+    font-size: var(--modal-title-font-size) !important;
+    line-height: 1.1;
+}
+
+.custom-modal.custom-modal-responsive .modal-content,
+.custom-modal.custom-modal-responsive .question-text,
+.custom-modal.custom-modal-responsive .answer-text,
+.custom-modal.custom-modal-responsive .qa-modal-body,
+.custom-modal.custom-modal-responsive .ranking-list,
+.custom-modal.custom-modal-responsive .score-adjust-chip-grid {
+    font-size: var(--modal-content-font-size) !important;
+}
+
+.custom-modal.custom-modal-responsive .custom-modal-content-qa,
+.custom-modal.custom-modal-responsive .custom-modal-content-readme,
+.custom-modal.custom-modal-responsive .modal-content,
+.custom-modal.custom-modal-responsive .qa-modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.custom-modal.custom-modal-responsive .qa-modal-actions,
+.custom-modal.custom-modal-responsive .button-group {
+    width: 100%;
+    display: grid !important;
+    gap: clamp(0.45rem, 1.4vw, 1.2rem);
+}
+
+.custom-modal.custom-modal-responsive.modal-actions-1 .qa-modal-actions,
+.custom-modal.custom-modal-responsive.modal-actions-1 .button-group {
+    grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.custom-modal.custom-modal-responsive.modal-actions-2 .qa-modal-actions,
+.custom-modal.custom-modal-responsive.modal-actions-2 .button-group {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.custom-modal.custom-modal-responsive.modal-actions-3 .qa-modal-actions,
+.custom-modal.custom-modal-responsive.modal-actions-3 .button-group {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+.custom-modal.custom-modal-responsive.modal-actions-4 .qa-modal-actions,
+.custom-modal.custom-modal-responsive.modal-actions-4 .button-group {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+.custom-modal.custom-modal-responsive .qa-modal-actions .btn,
+.custom-modal.custom-modal-responsive .button-group .btn,
+.custom-modal.custom-modal-responsive .modal-content > .btn {
+    min-height: clamp(2.5rem, 7svh, 4.4rem);
+    font-size: var(--modal-button-font-size) !important;
+}
+
+.custom-modal.custom-modal-responsive.is-portrait .qa-modal-actions,
+.custom-modal.custom-modal-responsive.is-portrait .button-group {
+    grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.custom-modal.custom-modal-responsive.is-landscape {
+    --modal-card-width: 92vw;
+    --modal-card-height: 92svh;
+}
+
+@media (max-width: 700px) and (orientation: portrait) {
+    .custom-modal.custom-modal-responsive {
+        --modal-card-width: 92vw;
+        --modal-card-height: 92svh;
+    }
+}
+
+@media (orientation: landscape) and (max-height: 640px) {
+    .custom-modal.custom-modal-responsive {
+        --modal-card-width: 92vw;
+        --modal-card-height: 92svh;
+    }
+}
+
+/* Hard override: zentral gesteuerte Groesse fuer Ranking/Siegerehrung immer anwenden */
+.custom-modal.custom-modal-responsive.custom-modal-ranking > .custom-modal-card-qa,
+.custom-modal.custom-modal-responsive.custom-modal-victory > .custom-modal-card-qa {
+    width: var(--modal-card-width) !important;
+    max-width: var(--modal-card-width) !important;
+    height: var(--modal-card-height) !important;
+    max-height: var(--modal-card-height) !important;
+}
+
+.custom-modal.custom-modal-responsive.custom-modal-ranking,
+.custom-modal.custom-modal-responsive.custom-modal-victory {
+    align-items: center !important;
+    justify-content: center !important;
 }
 
 /* Print Styles */

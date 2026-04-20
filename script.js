@@ -235,14 +235,13 @@ const app = {
                 return;
             }
 
-            const modal = this.createModal('Aktuelles Ranking', { layout: 'qa' });
+            const modal = this.createModal('Aktuelles Ranking', { layout: 'qa', modalType: 'ranking' });
             const modalRoot = modal.content.closest('.custom-modal');
             modalRoot?.classList.add('custom-modal-ranking');
             const body = document.createElement('div');
             body.className = 'qa-modal-body';
 
             const sorted = [...this.state.game.teams].sort((a, b) => b.score - a.score);
-            this.applyRankingModalSizing(modalRoot, sorted.length);
             const list = document.createElement('div');
             list.className = 'ranking-list';
             sorted.forEach((t, idx) => {
@@ -294,118 +293,7 @@ const app = {
 
             actions.appendChild(btn);
             modal.content.appendChild(actions);
-
-            const applyRankingLayout = () => {
-                if (!modalRoot) return;
-
-                const card = modalRoot.querySelector('.custom-modal-card-qa');
-                if (!card) return;
-
-                const vw = window.innerWidth;
-                const vh = window.innerHeight;
-                const isLandscape = window.matchMedia('(orientation: landscape)').matches;
-                const isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-
-                const cardWidth = isLandscape ? '96vw' : '94vw';
-                const cardHeight = isLandscape ? (vh <= 500 ? '95svh' : '92svh') : '92svh';
-                const cardPadding = isLandscape ? '0.62rem 0.7rem' : '0.95rem 0.95rem';
-                const listGap = isLandscape ? '0.34rem' : '0.6rem';
-                const itemMinHeight = isLandscape ? '2rem' : '2.6rem';
-                const itemFont = isLandscape ? '0.92rem' : '1.03rem';
-                const scoreFont = isLandscape ? '0.98rem' : '1.14rem';
-                const actionHeight = isLandscape ? '2rem' : '2.55rem';
-                const actionFont = isLandscape ? '0.86rem' : '1rem';
-
-                body.style.setProperty('display', 'flex', 'important');
-                body.style.setProperty('flex-direction', 'column', 'important');
-                body.style.setProperty('flex', '1 1 auto', 'important');
-                body.style.setProperty('min-height', '0', 'important');
-                body.style.setProperty('overflow-y', 'auto', 'important');
-                body.style.setProperty('padding-right', '0', 'important');
-
-                list.style.setProperty('display', 'grid', 'important');
-                list.style.setProperty('grid-template-columns', '1fr', 'important');
-                list.style.setProperty('gap', listGap, 'important');
-                list.style.setProperty('margin', isLandscape ? '0.12rem 0' : '0.25rem 0', 'important');
-
-                list.querySelectorAll('.ranking-item').forEach((itemEl) => {
-                    itemEl.style.setProperty('display', 'flex', 'important');
-                    itemEl.style.setProperty('align-items', 'center', 'important');
-                    itemEl.style.setProperty('justify-content', 'space-between', 'important');
-                    itemEl.style.setProperty('min-height', itemMinHeight, 'important');
-                    itemEl.style.setProperty('padding', isLandscape ? '0.35rem 0.5rem' : '0.5rem 0.62rem', 'important');
-                    itemEl.style.setProperty('font-size', itemFont, 'important');
-                    itemEl.style.setProperty('border-left-width', '3px', 'important');
-                    itemEl.style.setProperty('border-radius', '0.5rem', 'important');
-                });
-
-                list.querySelectorAll('.ranking-item strong').forEach((scoreEl) => {
-                    scoreEl.style.setProperty('font-size', scoreFont, 'important');
-                    scoreEl.style.setProperty('min-width', '3ch', 'important');
-                });
-
-                list.querySelectorAll('.ranking-adjust-btn').forEach((adjustEl) => {
-                    adjustEl.style.setProperty('width', isLandscape ? '1.9rem' : '2.2rem', 'important');
-                    adjustEl.style.setProperty('min-width', isLandscape ? '1.9rem' : '2.2rem', 'important');
-                    adjustEl.style.setProperty('height', isLandscape ? '1.9rem' : '2.2rem', 'important');
-                    adjustEl.style.setProperty('min-height', isLandscape ? '1.9rem' : '2.2rem', 'important');
-                    adjustEl.style.setProperty('font-size', isLandscape ? '0.86rem' : '1rem', 'important');
-                });
-
-                actions.style.setProperty('display', 'flex', 'important');
-                actions.style.setProperty('flex-direction', 'column', 'important');
-                actions.style.setProperty('gap', isLandscape ? '0.28rem' : '0.42rem', 'important');
-                actions.style.setProperty('margin-top', isLandscape ? '0.18rem' : '0.42rem', 'important');
-
-                btn.style.setProperty('width', '100%', 'important');
-                btn.style.setProperty('min-height', actionHeight, 'important');
-                btn.style.setProperty('font-size', actionFont, 'important');
-                btn.style.setProperty('padding', isLandscape ? '0.3rem 0.55rem' : '0.45rem 0.7rem', 'important');
-
-                if (isLandscape) {
-                    actions.style.setProperty('position', 'sticky', 'important');
-                    actions.style.setProperty('bottom', '0', 'important');
-                    actions.style.setProperty('background', '#ffffff', 'important');
-                    actions.style.setProperty('padding-top', '0.16rem', 'important');
-                    actions.style.setProperty('z-index', '3', 'important');
-
-                    modalRoot.style.setProperty('position', 'absolute', 'important');
-                    modalRoot.style.setProperty('top', '0', 'important');
-                    modalRoot.style.setProperty('left', '0', 'important');
-                    modalRoot.style.setProperty('right', '0', 'important');
-                    modalRoot.style.setProperty('height', 'auto', 'important');
-                    modalRoot.style.setProperty('min-height', 'calc(100svh + 76px)', 'important');
-                    modalRoot.style.setProperty('align-items', 'flex-start', 'important');
-                    modalRoot.style.setProperty('overflow-y', 'auto', 'important');
-                    modalRoot.style.setProperty('padding-top', 'calc(0.24rem + env(safe-area-inset-top, 0px))', 'important');
-                    modalRoot.style.setProperty('padding-bottom', 'calc(0.82rem + env(safe-area-inset-bottom, 0px))', 'important');
-                }
-
-                if (!isLandscape && isTouchDevice) {
-                    actions.style.setProperty('position', 'static', 'important');
-                    actions.style.setProperty('bottom', 'auto', 'important');
-                    actions.style.setProperty('background', 'transparent', 'important');
-                    actions.style.setProperty('padding-top', '0', 'important');
-                    actions.style.setProperty('z-index', 'auto', 'important');
-
-                    modalRoot.style.setProperty('padding-top', 'calc(0.35rem + env(safe-area-inset-top, 0px))', 'important');
-                    modalRoot.style.setProperty('padding-bottom', 'calc(0.7rem + env(safe-area-inset-bottom, 0px))', 'important');
-                }
-
-                card.style.setProperty('width', cardWidth, 'important');
-                card.style.setProperty('max-width', cardWidth, 'important');
-                card.style.setProperty('height', cardHeight, 'important');
-                card.style.setProperty('max-height', cardHeight, 'important');
-                card.style.setProperty('padding', cardPadding, 'important');
-
-                const heading = card.querySelector('h2');
-                if (heading) {
-                    heading.style.setProperty('font-size', isLandscape ? 'clamp(0.95rem, 3vw, 1.1rem)' : 'clamp(1.1rem, 4.4vw, 1.3rem)', 'important');
-                    heading.style.setProperty('margin-bottom', isLandscape ? '0.2rem' : '0.35rem', 'important');
-                }
-            };
-
-            applyRankingLayout();
+            this.refreshModalSizing(modalRoot, { modalType: 'ranking' });
         },
 
         getScoreAdjustmentChipValues() {
@@ -437,7 +325,7 @@ const app = {
             const team = this.state.game.teams.find((candidate) => candidate.id === teamId);
             if (!team) return;
 
-            const modal = this.createModal(`Punkte anpassen: ${team.name}`, { layout: 'qa' });
+            const modal = this.createModal(`Punkte anpassen: ${team.name}`, { layout: 'qa', modalType: 'score-adjust' });
             const modalRoot = modal.content.closest('.custom-modal');
             modalRoot?.classList.add('custom-modal-score-adjust');
 
@@ -538,8 +426,6 @@ const app = {
                 }
                 renderCurrent();
             };
-
-            body.appendChild(resetBtn);
             modal.content.appendChild(body);
 
             const actions = document.createElement('div');
@@ -571,138 +457,11 @@ const app = {
             cancelBtn.textContent = 'Abbrechen';
             cancelBtn.onclick = () => modal.close();
 
+            actions.appendChild(resetBtn);
             actions.appendChild(applyBtn);
             actions.appendChild(cancelBtn);
             modal.content.appendChild(actions);
-
-            const applyScoreAdjustLayout = () => {
-                if (!modalRoot) return;
-
-                const card = modalRoot.querySelector('.custom-modal-card-qa');
-                if (!card) return;
-
-                const vw = window.innerWidth;
-                const vh = window.innerHeight;
-                const isLandscape = window.matchMedia('(orientation: landscape)').matches;
-                const isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-
-                const cardWidth = isLandscape ? '97vw' : '94vw';
-                const cardHeight = isLandscape
-                    ? (vh <= 480 ? '97svh' : '95svh')
-                    : '94svh';
-                const cardMaxHeight = isLandscape
-                    ? (vh <= 480 ? '97svh' : '95svh')
-                    : '94svh';
-                const cardPadding = isLandscape ? '0.52rem 0.62rem' : '0.95rem 0.95rem';
-                const chipColumns = isLandscape
-                    ? (vw >= 980 ? 6 : vw >= 840 ? 5 : 4)
-                    : (vw <= 420 ? 3 : 4);
-                const controlHeight = isLandscape ? '1.82rem' : '2.35rem';
-                const actionHeight = isLandscape ? '1.9rem' : '2.6rem';
-                const buttonFont = isLandscape ? '0.8rem' : '1rem';
-                const infoFont = isLandscape
-                    ? 'clamp(0.74rem, 2.45vw, 0.88rem)'
-                    : 'clamp(0.98rem, 3.6vw, 1.1rem)';
-
-                if (resetBtn.parentElement !== actions) {
-                    actions.insertBefore(resetBtn, applyBtn);
-                }
-
-                body.style.setProperty('display', 'flex', 'important');
-                body.style.setProperty('flex-direction', 'column', 'important');
-                body.style.setProperty('gap', isLandscape ? '0.38rem' : '0.7rem', 'important');
-                body.style.setProperty('flex', '1 1 auto', 'important');
-                body.style.setProperty('min-height', '0', 'important');
-                body.style.setProperty('overflow-y', 'auto', 'important');
-                body.style.setProperty('padding-right', '0', 'important');
-
-                actions.style.setProperty('display', isLandscape ? 'grid' : 'flex', 'important');
-                actions.style.setProperty('grid-template-columns', isLandscape ? 'repeat(3, minmax(0, 1fr))' : 'none', 'important');
-                actions.style.setProperty('flex-direction', isLandscape ? 'row' : 'column', 'important');
-                actions.style.setProperty('gap', isLandscape ? '0.38rem' : '0.62rem', 'important');
-                actions.style.setProperty('margin-top', isLandscape ? '0.18rem' : '0.45rem', 'important');
-                actions.style.setProperty('align-items', 'stretch', 'important');
-
-                [resetBtn, applyBtn, cancelBtn].forEach((btn) => {
-                    btn.style.setProperty('width', '100%', 'important');
-                    btn.style.setProperty('min-height', actionHeight, 'important');
-                    btn.style.setProperty('padding', '0.26rem 0.42rem', 'important');
-                    btn.style.setProperty('font-size', buttonFont, 'important');
-                    btn.style.setProperty('line-height', '1.1', 'important');
-                });
-
-                modeToggle.style.setProperty('display', 'grid', 'important');
-                modeToggle.style.setProperty('grid-template-columns', isLandscape ? 'repeat(2, minmax(0, 1fr))' : '1fr', 'important');
-                modeToggle.style.setProperty('gap', isLandscape ? '0.36rem' : '0.55rem', 'important');
-
-                [plusBtn, minusBtn].forEach((btn) => {
-                    btn.style.setProperty('min-height', controlHeight, 'important');
-                    btn.style.setProperty('padding', '0.25rem 0.45rem', 'important');
-                    btn.style.setProperty('font-size', buttonFont, 'important');
-                });
-
-                chips.style.setProperty('grid-template-columns', `repeat(${chipColumns}, minmax(0, 1fr))`, 'important');
-                chips.style.setProperty('gap', isLandscape ? '0.32rem' : '0.48rem', 'important');
-                chips.querySelectorAll('.score-adjust-chip').forEach((chip) => {
-                    chip.style.setProperty('min-height', controlHeight, 'important');
-                    chip.style.setProperty('padding', isLandscape ? '0.2rem 0.3rem' : '0.32rem 0.35rem', 'important');
-                    chip.style.setProperty('font-size', buttonFont, 'important');
-                });
-
-                info.style.setProperty('font-size', infoFont, 'important');
-                info.style.setProperty('margin', isLandscape ? '0.14rem 0 0.18rem 0' : '0.1rem 0 0.2rem 0', 'important');
-                info.style.setProperty('line-height', isLandscape ? '1.2' : '1.3', 'important');
-
-                scorePreview.style.setProperty('font-size', isLandscape ? 'clamp(0.8rem, 2.5vw, 0.92rem)' : 'clamp(0.9rem, 3vw, 1rem)', 'important');
-                scorePreview.style.setProperty('padding', isLandscape ? '0.34rem 0.45rem' : '0.52rem 0.58rem', 'important');
-
-                if (isLandscape) {
-                    actions.style.setProperty('position', 'sticky', 'important');
-                    actions.style.setProperty('bottom', '0', 'important');
-                    actions.style.setProperty('background', '#ffffff', 'important');
-                    actions.style.setProperty('padding-top', '0.18rem', 'important');
-                    actions.style.setProperty('z-index', '3', 'important');
-
-                    modalRoot.style.setProperty('position', 'absolute', 'important');
-                    modalRoot.style.setProperty('top', '0', 'important');
-                    modalRoot.style.setProperty('left', '0', 'important');
-                    modalRoot.style.setProperty('right', '0', 'important');
-                    modalRoot.style.setProperty('height', 'auto', 'important');
-                    modalRoot.style.setProperty('min-height', 'calc(100svh + 84px)', 'important');
-                    modalRoot.style.setProperty('align-items', 'flex-start', 'important');
-                    modalRoot.style.setProperty('overflow-y', 'auto', 'important');
-                    modalRoot.style.setProperty('padding-top', 'calc(0.22rem + env(safe-area-inset-top, 0px))', 'important');
-                    modalRoot.style.setProperty('padding-bottom', 'calc(0.86rem + env(safe-area-inset-bottom, 0px))', 'important');
-                }
-
-                if (!isLandscape && isTouchDevice) {
-                    actions.style.setProperty('position', 'static', 'important');
-                    actions.style.setProperty('bottom', 'auto', 'important');
-                    actions.style.setProperty('background', 'transparent', 'important');
-                    actions.style.setProperty('padding-top', '0', 'important');
-                    actions.style.setProperty('z-index', 'auto', 'important');
-
-                    body.style.setProperty('flex', '1 1 auto', 'important');
-                    body.style.setProperty('overflow-y', 'auto', 'important');
-
-                    modalRoot.style.setProperty('padding-top', 'calc(0.35rem + env(safe-area-inset-top, 0px))', 'important');
-                    modalRoot.style.setProperty('padding-bottom', 'calc(0.7rem + env(safe-area-inset-bottom, 0px))', 'important');
-                }
-
-                card.style.setProperty('width', cardWidth, 'important');
-                card.style.setProperty('max-width', cardWidth, 'important');
-                card.style.setProperty('height', cardHeight, 'important');
-                card.style.setProperty('max-height', cardMaxHeight, 'important');
-                card.style.setProperty('padding', cardPadding, 'important');
-
-                const heading = card.querySelector('h2');
-                if (heading) {
-                    heading.style.setProperty('font-size', isLandscape ? 'clamp(0.76rem, 2.5vw, 0.9rem)' : 'clamp(0.95rem, 4vw, 1.08rem)', 'important');
-                    heading.style.setProperty('margin-bottom', isLandscape ? '0.1rem' : '0.2rem', 'important');
-                }
-            };
-
-            applyScoreAdjustLayout();
+            this.refreshModalSizing(modalRoot, { modalType: 'score-adjust' });
 
             renderMode();
             renderCurrent();
@@ -743,6 +502,93 @@ const app = {
             this.showRankingModal();
         },
 
+        applyUnifiedModalSizing(modalRoot, options = {}) {
+            if (!modalRoot) return;
+
+            const { buttonCount = 1 } = options;
+            const isLandscape = window.matchMedia('(orientation: landscape)').matches;
+            const viewport = window.visualViewport;
+            const vw = Math.round(viewport?.width || window.innerWidth);
+            const vh = Math.round(viewport?.height || window.innerHeight);
+            const minSide = Math.min(vw, vh);
+
+            modalRoot.classList.toggle('is-landscape', isLandscape);
+            modalRoot.classList.toggle('is-portrait', !isLandscape);
+
+            [1, 2, 3, 4].forEach((count) => modalRoot.classList.remove(`modal-actions-${count}`));
+            const actionColumns = isLandscape ? Math.min(4, Math.max(2, buttonCount || 2)) : 1;
+            modalRoot.classList.add(`modal-actions-${actionColumns}`);
+
+            const cardWidthPx = Math.max(280, Math.round(vw * 0.92));
+            const cardHeightPx = Math.max(260, Math.round(vh * 0.92));
+            const cardWidth = `${Math.min(vw - 2, cardWidthPx)}px`;
+            const cardHeight = `${Math.min(vh - 2, cardHeightPx)}px`;
+
+            const contentFont = Math.max(16, Math.min(42, minSide * 0.047));
+            const titleFont = Math.max(28, Math.min(74, contentFont * 1.65));
+            const buttonFont = Math.max(15, Math.min(30, contentFont * 0.68));
+
+            modalRoot.style.setProperty('--modal-card-width', cardWidth);
+            modalRoot.style.setProperty('--modal-card-height', cardHeight);
+            modalRoot.style.setProperty('--modal-content-font-size', `${contentFont}px`);
+            modalRoot.style.setProperty('--modal-title-font-size', `${titleFont}px`);
+            modalRoot.style.setProperty('--modal-button-font-size', `${buttonFont}px`);
+
+            modalRoot.style.setProperty('--qa-card-height', cardHeight);
+            modalRoot.style.setProperty('--ranking-card-height', cardHeight);
+            modalRoot.style.setProperty('--qa-content-font-size', `${contentFont}px`);
+            modalRoot.style.setProperty('--qa-info-font-size', `${Math.max(15, Math.min(30, contentFont * 0.72))}px`);
+            modalRoot.style.setProperty('--qa-team-font-size', `${Math.max(15, Math.min(29, contentFont * 0.68))}px`);
+            modalRoot.style.setProperty('--qa-button-font-size', `${buttonFont}px`);
+
+            // Dynamische Safe-Hoehe verhindert Versatz bei ein-/ausblendender Browser-UI.
+            const safeHeightPx = `${Math.max(200, vh - 6)}px`;
+            modalRoot.style.setProperty('--qa-mobile-safe-height', safeHeightPx);
+            modalRoot.style.setProperty('--ranking-mobile-safe-height', safeHeightPx);
+            modalRoot.style.setProperty('--score-adjust-mobile-safe-height', safeHeightPx);
+
+            const modalCard = modalRoot.querySelector('.custom-modal-card-qa, .custom-modal-card-readme, .custom-modal > div') || modalRoot.firstElementChild;
+            if (modalCard && modalCard.style) {
+                modalCard.style.setProperty('--qa-mobile-safe-height', safeHeightPx);
+                modalCard.style.setProperty('--ranking-mobile-safe-height', safeHeightPx);
+                modalCard.style.setProperty('--score-adjust-mobile-safe-height', safeHeightPx);
+            }
+            modalRoot.style.pointerEvents = 'auto';
+
+            modalRoot.style.position = 'fixed';
+            modalRoot.style.top = '0';
+            modalRoot.style.left = '0';
+            modalRoot.style.right = '';
+            modalRoot.style.width = '100dvw';
+            modalRoot.style.minHeight = '';
+            modalRoot.style.overflowY = '';
+            modalRoot.style.alignItems = 'center';
+            modalRoot.style.justifyContent = 'center';
+            modalRoot.style.paddingTop = '';
+            modalRoot.style.paddingBottom = '';
+            modalRoot.style.height = `${vh}px`;
+            modalRoot.style.maxHeight = `${vh}px`;
+        },
+
+        refreshModalSizing(modalRoot, options = {}) {
+            if (!modalRoot) return;
+
+            const effectiveModalType = options.modalType || modalRoot.dataset.modalType || 'default';
+            if (effectiveModalType) {
+                modalRoot.dataset.modalType = effectiveModalType;
+            }
+
+            const countFromQaActions = modalRoot.querySelectorAll('.qa-modal-actions .btn').length;
+            const countFromButtonGroups = modalRoot.querySelectorAll('.button-group .btn').length;
+            const buttonCount = countFromQaActions || countFromButtonGroups || 1;
+
+            this.applyUnifiedModalSizing(modalRoot, {
+                ...options,
+                modalType: effectiveModalType,
+                buttonCount
+            });
+        },
+
         createSimpleModal(title, text, buttonText, onNext, options = {}) {
             const modal = this.createModal(title, options);
 
@@ -769,6 +615,7 @@ const app = {
                 btn.onclick = () => { modal.close(); if (onNext) onNext(); };
                 actions.appendChild(btn);
                 modal.content.appendChild(actions);
+                this.refreshModalSizing(modalRoot, { modalType: options.modalType || 'qa-simple' });
                 return;
             }
 
@@ -782,12 +629,17 @@ const app = {
             btn.textContent = buttonText;
             btn.onclick = () => { modal.close(); if (onNext) onNext(); };
             modal.content.appendChild(btn);
+
+            const modalRoot = modal.content.closest('.custom-modal');
+            this.refreshModalSizing(modalRoot, { modalType: 'simple' });
         },
 
         createModal(title, options = {}) {
             document.querySelectorAll('.custom-modal').forEach(m => m.remove());
             const modalBg = document.createElement('div');
             modalBg.className = 'custom-modal';
+            modalBg.classList.add('custom-modal-responsive');
+            modalBg.dataset.modalType = options.modalType || options.layout || 'default';
             if (options.layout === 'qa') {
                 modalBg.classList.add('custom-modal-qa');
             }
@@ -797,13 +649,15 @@ const app = {
             modalBg.style.position = 'fixed';
             modalBg.style.top = '0';
             modalBg.style.left = '0';
-            modalBg.style.width = '100vw';
-            modalBg.style.height = '100vh';
+            modalBg.style.width = '100dvw';
+            modalBg.style.height = '100dvh';
             modalBg.style.background = 'rgba(0,0,0,0.5)';
             modalBg.style.display = 'flex';
             modalBg.style.alignItems = 'center';
             modalBg.style.justifyContent = 'center';
             modalBg.style.zIndex = '9999';
+            modalBg.style.touchAction = 'pan-y';
+            modalBg.style.webkitOverflowScrolling = 'touch';
             const modal = document.createElement('div');
             if (options.layout === 'qa') {
                 modal.classList.add('custom-modal-card-qa');
@@ -817,6 +671,7 @@ const app = {
             modal.style.maxWidth = '500px';
             modal.style.width = '90vw';
             modal.style.boxShadow = '0 10px 40px rgba(0,0,0,0.25)';
+            modal.style.pointerEvents = 'auto';
 
             if (options.layout === 'qa') {
                 modal.style.width = '80vw';
@@ -862,14 +717,38 @@ const app = {
             modal.appendChild(content);
             modalBg.appendChild(modal);
             document.body.appendChild(modalBg);
+
+            const refreshSizing = () => this.refreshModalSizing(modalBg);
+            refreshSizing();
+
+            window.addEventListener('resize', refreshSizing, { passive: true });
+            window.addEventListener('orientationchange', refreshSizing, { passive: true });
+
+            const viewport = window.visualViewport;
+            if (viewport) {
+                viewport.addEventListener('resize', refreshSizing, { passive: true });
+            }
+
             modalBg.addEventListener('click', (e) => {
                 if (e.target === modalBg) {
+                    window.removeEventListener('resize', refreshSizing);
+                    window.removeEventListener('orientationchange', refreshSizing);
+                    if (viewport) {
+                        viewport.removeEventListener('resize', refreshSizing);
+                    }
                     modalBg.remove();
                 }
             });
             return {
                 content,
-                close: () => modalBg.remove()
+                close: () => {
+                    window.removeEventListener('resize', refreshSizing);
+                    window.removeEventListener('orientationchange', refreshSizing);
+                    if (viewport) {
+                        viewport.removeEventListener('resize', refreshSizing);
+                    }
+                    modalBg.remove();
+                }
             };
         },
     state: {

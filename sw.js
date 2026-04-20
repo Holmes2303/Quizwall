@@ -1,5 +1,5 @@
-const CORE_CACHE = 'quizwall-core-v32';
-const RUNTIME_CACHE = 'quizwall-runtime-v32';
+const CORE_CACHE = 'quizwall-core-v33';
+const RUNTIME_CACHE = 'quizwall-runtime-v33';
 
 // Keep install light for faster first meaningful paint.
 const CORE_ASSETS = [
@@ -45,6 +45,13 @@ function isStaticAsset(pathname) {
   return /\.(?:css|js|png|jpg|jpeg|gif|webp|svg|ico|json)$/i.test(pathname);
 }
 
+function isCriticalAsset(pathname) {
+  return pathname.endsWith('/style.css')
+    || pathname.endsWith('/script.js')
+    || pathname.endsWith('/default-quiz-data.js')
+    || pathname.endsWith('/manifest-v20260420.webmanifest');
+}
+
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
@@ -61,6 +68,20 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+
+  // Kritische Assets: network-first, damit HTML/CSS/JS nicht in Mischstaenden landen.
+  if (isCriticalAsset(url.pathname)) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const cloned = response.clone();
+          caches.open(CORE_CACHE).then((cache) => cache.put(event.request, cloned));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
     );
     return;
   }
