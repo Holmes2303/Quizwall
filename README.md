@@ -232,10 +232,11 @@ Im Repository ist aktuell keine separate Lizenzdatei hinterlegt.
 
 ### 2026-04-24 (V1 beta 3)
 
-- MathJax/LaTeX-Rendering für mathematische Formeln in Fragen und Antworten vollständig integriert (inkl. dynamischer Modals und $...$-Syntax).
-- MathJax-Konfiguration für Dollarzeichen-Syntax ergänzt.
+- MathJax/LaTeX-Rendering für mathematische und chemische Formeln in Fragen und Antworten vollständig integriert (inkl. dynamischer Modals, $...$-Syntax und \ce{...} für Chemie).
+- MathJax-Konfiguration für Dollarzeichen-Syntax und mhchem-Paket (chemische Notation) ergänzt und korrekt geladen.
+- Prompt für externen KI-Export klar mit LaTeX-/MathJax-/mhchem-Hinweis versehen (inkl. Beispielen für Summenformeln und Reaktionsschemata).
 - Dynamisches Nach-Rendern von Formeln nach Modalerstellung robust umgesetzt.
-- Prompt für externen KI-Export klar mit LaTeX-/MathJax-Hinweis versehen.
+- Bugfix: Chemische Formeln werden jetzt zuverlässig als solche erkannt und gerendert.
 - Team-Setup-UI: Chips, Abstand und Layout für die Auswahl der Teamanzahl verbessert.
 - Diverse kleinere UI/UX-Optimierungen und Bugfixes.
 

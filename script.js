@@ -1435,8 +1435,9 @@ const app = {
         return [
             'Du erstellst ein Quiz für eine Jeopardy-Quizwand.',
             'WICHTIG: Gib AUSSCHLIESSLICH gültiges JSON zurück. Kein Text davor oder danach.',
-            'HINWEIS: Fragen und Antworten werden als reiner Text angezeigt, aber einfache mathematische Formeln können im LaTeX-Format angegeben werden (z. B. \\frac{a}{b}, x^2, Wurzeln, Summen, Integrale usw.).',
-            'Diese werden automatisch mit MathJax gerendert. Kein HTML, keine Tabellen, keine Bilder, keine Formatierungen außer LaTeX.',
+            'HINWEIS: Fragen und Antworten werden als reiner Text angezeigt. Einfache mathematische Formeln können im LaTeX-Format angegeben werden (z. B. \\frac{a}{b}, x^2, Wurzeln, Summen, Integrale usw.).',
+            'Auch chemische Summenformeln und Reaktionsschemata sind möglich – nutze dafür LaTeX-Subskripte (z. B. \\mathrm{H_2O}) oder die mhchem-Syntax (z. B. \\ce{2H2 + O2 -> 2H2O}).',
+            'Diese werden automatisch mit MathJax (inkl. mhchem) gerendert. Kein HTML, keine Tabellen, keine Bilder, keine Formatierungen außer LaTeX/mhchem.',
             '',
             ...sourceInstructions,
             `Maximale Gesamtanzahl Fragen: ${maxQuestions}`,
