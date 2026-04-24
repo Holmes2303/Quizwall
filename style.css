@@ -1,3 +1,119 @@
+/* Fix: Team-Setup-Box bleibt stabil, Teamnamen scrollen bei Überlauf */
+/* Team-Setup-Box: immer fast volle Höhe, Buttons immer sichtbar */
+#teamSetup .setup-content {
+    min-height: 420px;
+    max-height: 90vh;
+    height: 90vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    box-sizing: border-box;
+}
+
+#teamSetup .setup-section {
+    width: 100%;
+}
+
+#teamNamesQuick {
+    flex: 1 1 auto;
+    min-height: 8.5rem;
+    max-height: 32vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+#teamNamesQuick .team-name-input {
+    margin-bottom: 0.7rem;
+    margin-top: 0;
+}
+
+#teamCountChips {
+    margin-bottom: 1.2rem;
+    min-height: 2.2rem;
+}
+
+#teamSetup .button-group {
+    margin-top: auto;
+    display: flex;
+    gap: 1.2rem;
+    justify-content: center;
+    padding-bottom: 0.5rem;
+}
+
+#teamSetup .setup-section {
+    width: 100%;
+}
+
+#teamNamesQuick {
+    min-height: 8.5rem;
+    max-height: 14rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+#teamNamesQuick .team-name-input {
+    margin-bottom: 0.7rem;
+    margin-top: 0;
+}
+
+#teamCountChips {
+    margin-bottom: 1.2rem;
+    min-height: 2.2rem;
+}
+/* Abstand zwischen Teamnamenfeldern im Team-Setup */
+#teamNamesQuick .team-name-input {
+    margin-bottom: 0.7rem;
+    margin-top: 0;
+}
+
+/* Verhindert, dass Chips und Überschrift nach oben springen */
+#teamCountChips {
+    margin-bottom: 1.2rem;
+    min-height: 2.2rem;
+}
+
+#teamNamesQuick {
+    min-height: 8.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+.team-count-chip-list {
+    display: flex;
+    gap: 0.5rem;
+    margin: 0.5rem 0 1.2rem 0;
+}
+
+.team-count-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 3.1rem;
+    min-height: 2.2rem;
+    padding: 0.25rem 0.9rem;
+    border-radius: 999px;
+    background: var(--quaternary-color, #eee);
+    color: var(--text-color, #222);
+    font-size: 1.1rem;
+    font-weight: 700;
+    border: 2px solid var(--border-color, #bbb);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border 0.15s;
+    user-select: none;
+}
+.team-count-chip.active {
+    background: var(--primary-color, #E25D03);
+    color: #fff;
+    border-color: var(--primary-color, #E25D03);
+}
+.team-count-chip:hover {
+    background: #ffd6b8;
+    border-color: var(--primary-color, #E25D03);
+}
 .custom-modal > div {
     width: 60vw !important;
     height: 60vh !important;

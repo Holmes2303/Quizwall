@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
+                <!-- MathJax für LaTeX-Rendering -->
+                <script>
+                    window.MathJax = {
+                        tex: {
+                            inlineMath: [['$', '$'], ['\\(', '\\)']]
+                        }
+                    };
+                </script>
+                <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#E25D03">
@@ -149,8 +158,8 @@
             <div class="setup-content">
                 <h2>Teams wählen</h2>
                 <div class="setup-section">
-                    <label for="teamCountQuick">Anzahl Teams (2-4):</label>
-                    <input type="number" id="teamCountQuick" min="2" max="4" value="2" onchange="app.renderTeamSetup()" oninput="app.renderTeamSetup()">
+                    <label>Anzahl Teams:</label>
+                    <div id="teamCountChips" class="team-count-chip-list"></div>
                 </div>
                 <div class="setup-section">
                     <label>Team-Namen:</label>

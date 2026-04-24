@@ -68,7 +68,14 @@ const app = {
         },
 
         showQuestionModal(questionText, onNext) {
-            this.createSimpleModal('Frage', questionText, 'Weiter', onNext, { layout: 'qa', modalType: 'question' });
+            // Frage als HTML einfügen, damit MathJax LaTeX rendern kann
+            const html = `<span class="mathjax-content">${questionText}</span>`;
+            this.createSimpleModal('Frage', html, 'Weiter', onNext, { layout: 'qa', modalType: 'question', isHtml: true, afterRender: (modal) => {
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    const el = modal.querySelector('.mathjax-content');
+                    if (el) window.MathJax.typesetPromise([el]);
+                }
+            }});
         },
 
         showAnswerModal(answerText, onNext) {
@@ -80,9 +87,15 @@ const app = {
             body.className = 'qa-modal-body';
 
             const content = document.createElement('div');
-            content.className = 'answer-text';
-            content.textContent = answerText;
+            content.className = 'answer-text mathjax-content';
+            content.innerHTML = answerText;
             body.appendChild(content);
+            // Nach dem Einfügen MathJax nur auf das relevante Element anwenden
+            setTimeout(() => {
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    window.MathJax.typesetPromise([content]);
+                }
+            }, 0);
 
             const teamSection = document.createElement('div');
             teamSection.className = 'qa-team-section';
@@ -603,9 +616,21 @@ const app = {
 
                 const content = document.createElement('div');
                 content.className = 'question-text';
-                content.textContent = text;
+                if (options.isHtml) {
+                    content.innerHTML = text;
+                } else {
+                    content.textContent = text;
+                }
                 body.appendChild(content);
                 modal.content.appendChild(body);
+                // Nach dem Einfügen MathJax nur auf das relevante Element anwenden
+                if (window.MathJax && window.MathJax.typesetPromise && options.isHtml) {
+                    window.MathJax.typesetPromise([content]);
+                }
+                // Optionaler Callback nach Render
+                if (typeof options.afterRender === 'function') {
+                    options.afterRender(modal.content);
+                }
 
                 const actions = document.createElement('div');
                 actions.className = 'qa-modal-actions';
@@ -1410,6 +1435,8 @@ const app = {
         return [
             'Du erstellst ein Quiz für eine Jeopardy-Quizwand.',
             'WICHTIG: Gib AUSSCHLIESSLICH gültiges JSON zurück. Kein Text davor oder danach.',
+            'HINWEIS: Fragen und Antworten werden als reiner Text angezeigt, aber einfache mathematische Formeln können im LaTeX-Format angegeben werden (z. B. \\frac{a}{b}, x^2, Wurzeln, Summen, Integrale usw.).',
+            'Diese werden automatisch mit MathJax gerendert. Kein HTML, keine Tabellen, keine Bilder, keine Formatierungen außer LaTeX.',
             '',
             ...sourceInstructions,
             `Maximale Gesamtanzahl Fragen: ${maxQuestions}`,
@@ -1672,13 +1699,29 @@ const app = {
     },
 
     renderTeamSetup() {
-        const teamCountInput = document.getElementById('teamCountQuick');
+        // Chips für Teamanzahl (1-4)
+        const teamCountChips = document.getElementById('teamCountChips');
         const teamNamesContainer = document.getElementById('teamNamesQuick');
-        if (!teamCountInput || !teamNamesContainer) return;
+        if (!teamCountChips || !teamNamesContainer) return;
 
-        const teamCount = Math.max(2, Math.min(4, parseInt(teamCountInput.value, 10) || 2));
-        teamCountInput.value = String(teamCount);
+        // Initialwert
+        if (!this.state.quickTeamCount) this.state.quickTeamCount = 2;
+        const teamCount = this.state.quickTeamCount;
 
+        // Chips rendern
+        teamCountChips.innerHTML = '';
+        for (let i = 1; i <= 4; i++) {
+            const chip = document.createElement('div');
+            chip.className = 'team-count-chip' + (teamCount === i ? ' active' : '');
+            chip.textContent = `${i} Team${i > 1 ? 's' : ''}`;
+            chip.onclick = () => {
+                this.state.quickTeamCount = i;
+                this.renderTeamSetup();
+            };
+            teamCountChips.appendChild(chip);
+        }
+
+        // Teamnamen-Felder
         const names = Array.isArray(this.state.quickTeamNames) ? [...this.state.quickTeamNames] : [];
         names.length = teamCount;
         for (let i = 0; i < teamCount; i++) {
