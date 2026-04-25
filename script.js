@@ -70,7 +70,7 @@ const app = {
         showQuestionModal(questionText, onNext) {
             // Frage als HTML einfügen, damit MathJax LaTeX rendern kann
             const html = `<span class="mathjax-content">${questionText}</span>`;
-            this.createSimpleModal('Frage', html, 'Weiter', onNext, { layout: 'qa', modalType: 'question', isHtml: true, afterRender: (modal) => {
+            this.createSimpleModal('Frage', html, 'Weiter', onNext, { layout: 'qa', modalType: 'question', isHtml: true, buttonClass: 'qa-next-btn', afterRender: (modal) => {
                 if (window.MathJax && window.MathJax.typesetPromise) {
                     const el = modal.querySelector('.mathjax-content');
                     if (el) window.MathJax.typesetPromise([el]);
@@ -97,48 +97,52 @@ const app = {
                 }
             }, 0);
 
+
+            // Neue Chip-Auswahl für Teams
             const teamSection = document.createElement('div');
             teamSection.className = 'qa-team-section';
 
-            // Team-Auswahl direkt darunter
             const info = document.createElement('div');
             info.className = 'qa-modal-info';
             info.textContent = 'Welche Teams haben richtig geantwortet?';
             teamSection.appendChild(info);
 
+            // Responsive Container für Chips + Button
+            const chipRow = document.createElement('div');
+            chipRow.className = 'qa-team-chip-row';
+
             const teamList = document.createElement('div');
-            teamList.className = 'qa-team-list';
+            teamList.className = 'team-count-chip-list';
             const selectedTeams = new Set();
             this.state.game.teams.forEach(team => {
-                const label = document.createElement('label');
-                label.className = 'qa-team-row';
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.value = team.id;
-                checkbox.onchange = (e) => {
-                    if (e.target.checked) selectedTeams.add(team.id);
-                    else selectedTeams.delete(team.id);
+                const chip = document.createElement('div');
+                chip.className = 'team-count-chip';
+                chip.textContent = team.name;
+                chip.onclick = () => {
+                    if (selectedTeams.has(team.id)) {
+                        selectedTeams.delete(team.id);
+                        chip.classList.remove('active');
+                    } else {
+                        selectedTeams.add(team.id);
+                        chip.classList.add('active');
+                    }
                 };
-                label.appendChild(checkbox);
-                label.appendChild(document.createTextNode(team.name));
-                teamList.appendChild(label);
+                teamList.appendChild(chip);
             });
-
-            this.applyQaModalSizing(modalRoot, {
-                modalType: 'answer',
-                teamCount: this.state.game.teams.length
-            });
-            teamSection.appendChild(teamList);
-            body.appendChild(teamSection);
-            modal.content.appendChild(body);
+            chipRow.appendChild(teamList);
 
             // Weiter-Button
             const actions = document.createElement('div');
             actions.className = 'qa-modal-actions';
-
             const btn = document.createElement('button');
-            btn.className = 'btn btn-primary';
-            btn.textContent = 'Weiter';
+            btn.className = 'btn btn-primary qa-next-btn';
+            // Button-Beschriftung je nach Platz
+            const isSmall = window.matchMedia('(max-width: 420px), (max-height: 420px)').matches;
+            if (isSmall) {
+                btn.innerHTML = '<span aria-label="Weiter" title="Weiter">&#x27A1;</span>';
+            } else {
+                btn.textContent = 'Weiter';
+            }
             btn.onclick = () => {
                 this.state.game.teams.forEach(team => {
                     if (selectedTeams.has(team.id)) {
@@ -151,7 +155,14 @@ const app = {
                 if (onNext) onNext();
             };
             actions.appendChild(btn);
-            modal.content.appendChild(actions);
+
+            teamSection.appendChild(chipRow);
+            // Button immer separat unterhalb, zentriert
+            body.appendChild(teamSection);
+            body.appendChild(actions);
+            modal.content.appendChild(body);
+
+            // (doppelten Block entfernt)
         },
 
         applyQaModalSizing(modalRoot, { modalType = 'question', teamCount = 0 } = {}) {
@@ -297,7 +308,7 @@ const app = {
             const actions = document.createElement('div');
             actions.className = 'qa-modal-actions';
             const btn = document.createElement('button');
-            btn.className = 'btn btn-primary';
+            btn.className = 'btn btn-primary qa-next-btn';
             btn.textContent = typeof onNext === 'function' ? 'Weiter' : 'Schließen';
             btn.onclick = () => {
                 modal.close();
@@ -650,7 +661,7 @@ const app = {
             modal.content.appendChild(content);
 
             const btn = document.createElement('button');
-            btn.className = 'btn btn-primary';
+            btn.className = 'btn btn-primary qa-next-btn';
             btn.textContent = buttonText;
             btn.onclick = () => { modal.close(); if (onNext) onNext(); };
             modal.content.appendChild(btn);
@@ -2256,7 +2267,7 @@ const app = {
 
         const finishBtn = document.createElement('button');
         finishBtn.className = 'btn btn-primary';
-        finishBtn.textContent = 'Spiel zurücksetzen & Hauptmenü';
+        finishBtn.textContent = 'Weiter';
         finishBtn.onclick = () => {
             cleanupVictoryModalListeners();
             modal.close();
