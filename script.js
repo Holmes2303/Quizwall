@@ -97,7 +97,6 @@ const app = {
                 }
             }, 0);
 
-
             // Neue Chip-Auswahl für Teams
             const teamSection = document.createElement('div');
             teamSection.className = 'qa-team-section';
@@ -114,7 +113,9 @@ const app = {
             const teamList = document.createElement('div');
             teamList.className = 'team-count-chip-list';
             const selectedTeams = new Set();
-            this.state.game.teams.forEach(team => {
+            // Dynamische Team-Chips je nach Teamanzahl
+            const teams = Array.isArray(this.state.game.teams) ? this.state.game.teams : [];
+            teams.forEach(team => {
                 const chip = document.createElement('div');
                 chip.className = 'team-count-chip';
                 chip.textContent = team.name;
@@ -131,6 +132,12 @@ const app = {
             });
             chipRow.appendChild(teamList);
 
+            // Spaltenanzahl für Team-Chips dynamisch setzen (max. 4)
+            teamList.style.display = 'flex';
+            teamList.style.flexWrap = 'wrap';
+            teamList.style.justifyContent = 'center';
+            teamList.style.gap = '0.5rem';
+
             // Weiter-Button
             const actions = document.createElement('div');
             actions.className = 'qa-modal-actions';
@@ -144,7 +151,7 @@ const app = {
                 btn.textContent = 'Weiter';
             }
             btn.onclick = () => {
-                this.state.game.teams.forEach(team => {
+                teams.forEach(team => {
                     if (selectedTeams.has(team.id)) {
                         team.score += this.state.currentQuestion.points;
                     }
@@ -161,8 +168,6 @@ const app = {
             body.appendChild(teamSection);
             body.appendChild(actions);
             modal.content.appendChild(body);
-
-            // (doppelten Block entfernt)
         },
 
         applyQaModalSizing(modalRoot, { modalType = 'question', teamCount = 0 } = {}) {
@@ -1711,21 +1716,23 @@ const app = {
     },
 
     renderTeamSetup() {
-        // Chips für Teamanzahl (1-4)
+        // Chips für Teamanzahl (2-4)
         const teamCountChips = document.getElementById('teamCountChips');
         const teamNamesContainer = document.getElementById('teamNamesQuick');
         if (!teamCountChips || !teamNamesContainer) return;
 
         // Initialwert
         if (!this.state.quickTeamCount) this.state.quickTeamCount = 2;
-        const teamCount = this.state.quickTeamCount;
+        let teamCount = this.state.quickTeamCount;
+        teamCount = Math.max(2, Math.min(4, teamCount));
+        this.state.quickTeamCount = teamCount;
 
         // Chips rendern
         teamCountChips.innerHTML = '';
-        for (let i = 1; i <= 4; i++) {
+        for (let i = 2; i <= 4; i++) {
             const chip = document.createElement('div');
             chip.className = 'team-count-chip' + (teamCount === i ? ' active' : '');
-            chip.textContent = `${i} Team${i > 1 ? 's' : ''}`;
+            chip.textContent = `${i} Teams`;
             chip.onclick = () => {
                 this.state.quickTeamCount = i;
                 this.renderTeamSetup();
@@ -1762,8 +1769,9 @@ const app = {
             return;
         }
 
-        const teamCountInput = document.getElementById('teamCountQuick');
-        const teamCount = Math.max(2, Math.min(4, parseInt(teamCountInput?.value, 10) || 2));
+        // Teamanzahl aus Setup holen (immer 2-4)
+        let teamCount = this.state.quickTeamCount;
+        teamCount = Math.max(2, Math.min(4, teamCount));
         const teams = [];
         for (let i = 0; i < teamCount; i++) {
             const name = (this.state.quickTeamNames?.[i] || '').trim() || `Team ${i + 1}`;
