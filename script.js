@@ -68,8 +68,17 @@ const app = {
         },
 
         showQuestionModal(questionText, onNext) {
-            // Frage als HTML einfügen, damit MathJax LaTeX rendern kann
-            const html = `<span class="mathjax-content">${questionText}</span>`;
+            // Automatisch LaTeX/mhchem-Formeln in $...$ einbetten, falls nötig
+            let qt = questionText;
+            // Auch allgemeine LaTeX-Kommandos und einfache Operatoren erkennen
+            if (!qt.trim().startsWith('$')) {
+                // Wenn typische LaTeX-Kommandos oder ^/_ enthalten sind, einbetten
+                const latexPattern = /\\(ce|mathrm|frac|sqrt|sum|int|rho|pi|cdot|alpha|beta|gamma|Delta|theta|mu|nu|lambda|phi|psi|Omega|leq|geq|neq|approx|rightarrow|leftarrow|infty|partial|dots|over|under|hat|bar|vec|dot|times|pm|div|sin|cos|tan|log|ln|exp)|\^|_/;
+                if (latexPattern.test(qt)) {
+                    qt = `$${qt}$`;
+                }
+            }
+            const html = `<span class="mathjax-content">${qt}</span>`;
             this.createSimpleModal('Frage', html, 'Weiter', onNext, { layout: 'qa', modalType: 'question', isHtml: true, buttonClass: 'qa-next-btn', afterRender: (modal) => {
                 if (window.MathJax && window.MathJax.typesetPromise) {
                     const el = modal.querySelector('.mathjax-content');
@@ -86,9 +95,19 @@ const app = {
             const body = document.createElement('div');
             body.className = 'qa-modal-body';
 
+            // Automatisch LaTeX/mhchem-Formeln in $...$ einbetten, falls nötig
+            let at = answerText;
+            // Auch allgemeine LaTeX-Kommandos und einfache Operatoren erkennen
+            if (!at.trim().startsWith('$')) {
+                const latexPattern = /\\(ce|mathrm|frac|sqrt|sum|int|rho|pi|cdot|alpha|beta|gamma|Delta|theta|mu|nu|lambda|phi|psi|Omega|leq|geq|neq|approx|rightarrow|leftarrow|infty|partial|dots|over|under|hat|bar|vec|dot|times|pm|div|sin|cos|tan|log|ln|exp)|\^|_/;
+                if (latexPattern.test(at)) {
+                    at = `$${at}$`;
+                }
+            }
+
             const content = document.createElement('div');
             content.className = 'answer-text mathjax-content';
-            content.innerHTML = answerText;
+            content.innerHTML = at;
             body.appendChild(content);
             // Nach dem Einfügen MathJax nur auf das relevante Element anwenden
             setTimeout(() => {
@@ -1451,8 +1470,10 @@ const app = {
         return [
             'Du erstellst ein Quiz für eine Jeopardy-Quizwand.',
             'WICHTIG: Gib AUSSCHLIESSLICH gültiges JSON zurück. Kein Text davor oder danach.',
-            'HINWEIS: Fragen und Antworten werden als reiner Text angezeigt. Einfache mathematische Formeln können im LaTeX-Format angegeben werden (z. B. \\frac{a}{b}, x^2, Wurzeln, Summen, Integrale usw.).',
-            'Auch chemische Summenformeln und Reaktionsschemata sind möglich – nutze dafür LaTeX-Subskripte (z. B. \\mathrm{H_2O}) oder die mhchem-Syntax (z. B. \\ce{2H2 + O2 -> 2H2O}).',
+            'Das JSON muss so formatiert sein, dass es direkt importierbar ist. ACHTUNG: Alle Backslashes (z. B. in LaTeX-Formeln wie \\frac{a}{b}) müssen für JSON korrekt escaped werden (also \\ statt \\).',
+            'HINWEIS: Fragen und Antworten werden als reiner Text angezeigt. ALLE mathematischen Formeln (z. B. Brüche, Potenzen, Indizes, griechische Buchstaben, Summen, Integrale, Wurzeln, etc.) MÜSSEN IMMER im LaTeX-Format und IMMER in $...$ gesetzt werden (z. B. $a^2 + b^2 = c^2$, $v = \\frac{s}{t}$, $\\rho = \\frac{m}{V}$, $A = \\pi r^2$).',
+            'Chemische Summenformeln und Reaktionsschemata MÜSSEN IMMER als mhchem-Syntax ausgegeben werden, z. B. $\\ce{H2O}$ oder $\\ce{2H2 + O2 -> 2H2O}$. Niemals als Unicode (wie H₂O) oder Klartext!',
+            'Auch LaTeX-Subskripte sind möglich (z. B. $\\mathrm{H_2O}$).',
             'Diese werden automatisch mit MathJax (inkl. mhchem) gerendert. Kein HTML, keine Tabellen, keine Bilder, keine Formatierungen außer LaTeX/mhchem.',
             '',
             ...sourceInstructions,
@@ -1592,7 +1613,19 @@ const app = {
 
         try {
             const jsonText = this.extractJsonFromAiResponse(input.value);
-            const parsed = JSON.parse(jsonText);
+            let parsed;
+            try {
+                parsed = JSON.parse(jsonText);
+            } catch (err1) {
+                // Automatisch Backslashes escapen und erneut versuchen
+                const fixed = jsonText.replace(/\\(?![\\"/bfnrtu])/g, "\\\\").replace(/(?<!\\)\\(?![\\"/bfnrtu])/g, "\\\\");
+                try {
+                    parsed = JSON.parse(fixed);
+                } catch (err2) {
+                    alert('Import fehlgeschlagen: ' + err1.message + '\nAutomatische Korrektur hat nicht geholfen.');
+                    return;
+                }
+            }
             const imported = this.normalizeImportedQuiz(parsed);
 
             this.state.quizTitle = imported.quizTitle;
