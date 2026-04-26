@@ -1492,7 +1492,10 @@ const app = {
         return [
             'Du erstellst ein Quiz für eine Jeopardy-Quizwand.',
             'WICHTIG: Gib AUSSCHLIESSLICH gültiges JSON zurück. Kein Text davor oder danach.',
-            'Das JSON muss so formatiert sein, dass es direkt importierbar ist. ACHTUNG: Alle Backslashes (z. B. in LaTeX-Formeln wie \\frac{a}{b}) müssen für JSON korrekt escaped werden (also \\ statt \\).',
+            'Achte darauf, ausschließlich gerade ASCII-Anführungszeichen (") für alle Feldnamen und Strings zu verwenden. Keine typografischen Anführungszeichen („ “ oder ‘ ’), wie sie z. B. auf Apple-Geräten oder in Textverarbeitungen vorkommen.',
+            'Jeder einzelne Backslash (\\) muss in JSON als doppelter Backslash (\\\\) geschrieben werden, z. B. $1\\,\\mathrm{kWh}$.',
+            'Verwende keine Sonderzeichen oder Formatierungen, die von bestimmten Plattformen (wie macOS/iOS) automatisch eingefügt werden könnten.',
+            'Das JSON muss so formatiert sein, dass es direkt importierbar ist. Kein Text, keine Kommentare, keine Formatierungen davor oder danach.',
             'HINWEIS: Fragen und Antworten werden als reiner Text angezeigt. ALLE mathematischen Formeln (z. B. Brüche, Potenzen, Indizes, griechische Buchstaben, Summen, Integrale, Wurzeln, etc.) MÜSSEN IMMER im LaTeX-Format und IMMER in $...$ gesetzt werden (z. B. $a^2 + b^2 = c^2$, $v = \\frac{s}{t}$, $\\rho = \\frac{m}{V}$, $A = \\pi r^2$).',
             'Chemische Summenformeln und Reaktionsschemata MÜSSEN IMMER als mhchem-Syntax ausgegeben werden, z. B. $\\ce{H2O}$ oder $\\ce{2H2 + O2 -> 2H2O}$. Niemals als Unicode (wie H₂O) oder Klartext!',
             'Auch LaTeX-Subskripte sind möglich (z. B. $\\mathrm{H_2O}$).',
@@ -1719,7 +1722,12 @@ const app = {
         if (!input) return;
 
         try {
-            const jsonText = this.extractJsonFromAiResponse(input.value);
+            let jsonText = this.extractJsonFromAiResponse(input.value);
+            // Automatische Korrektur typografischer Anführungszeichen
+            const typographicQuotes = /[“”„‟❝❞＂«»‘’‚‛❮❯‹›]/g;
+            if (typographicQuotes.test(jsonText)) {
+                jsonText = jsonText.replace(/[“”„‟❝❞＂«»‘’‚‛❮❯‹›]/g, '"');
+            }
             let parsed;
             let parseError = null;
             try {
@@ -1745,6 +1753,7 @@ const app = {
                     msg += "\nBeispiele (im Kontext):\n" + errorContexts.slice(0, 5).map((c, i) => `${i + 1}. ...${c}...`).join("\n");
                 }
                 msg += "\nSoll eine automatische Korrektur versucht werden?";
+                msg += "\n\nHinweis: Auf Apple-Geräten (macOS/iOS) und in manchen Textverarbeitungen werden oft typografische Anführungszeichen verwendet. Bitte ersetze diese durch normale doppelte Anführungszeichen (\").";
                 if (confirm(msg)) {
                     // Korrektur durchführen und Änderungen protokollieren
                     let changes = [];
@@ -1782,6 +1791,7 @@ const app = {
                     msg2 += '- Falsche Struktur (fehlende Felder)\n';
                     msg2 += '\nGefundene Fehlerstellen (Kontext):\n';
                     msg2 += errorContexts.slice(0, 10).map((c, i) => `${i + 1}. ...${c}...`).join("\n");
+                    msg2 += '\n\nHinweis: Auf Apple-Geräten (macOS/iOS) und in manchen Textverarbeitungen werden oft typografische Anführungszeichen verwendet. Bitte ersetze diese durch normale doppelte Anführungszeichen (\").';
                     alert(msg2);
                     return;
                 }
