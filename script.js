@@ -68,21 +68,43 @@ const app = {
         },
 
         showQuestionModal(questionText, onNext) {
-            // Automatisch LaTeX/mhchem-Formeln in $...$ einbetten, falls nötig
-            let qt = questionText;
-            // Auch allgemeine LaTeX-Kommandos und einfache Operatoren erkennen
-            if (!qt.trim().startsWith('$')) {
-                // Wenn typische LaTeX-Kommandos oder ^/_ enthalten sind, einbetten
-                const latexPattern = /\\(ce|mathrm|frac|sqrt|sum|int|rho|pi|cdot|alpha|beta|gamma|Delta|theta|mu|nu|lambda|phi|psi|Omega|leq|geq|neq|approx|rightarrow|leftarrow|infty|partial|dots|over|under|hat|bar|vec|dot|times|pm|div|sin|cos|tan|log|ln|exp)|\^|_/;
-                if (latexPattern.test(qt)) {
-                    qt = `$${qt}$`;
+            // Fragetext segmentieren: $...$-Bereiche als LaTeX, Rest als Text
+            function renderQuestionSegments(text) {
+                // Ersetze \n durch <br> für Zeilenumbrüche
+                text = text.replace(/\n/g, '<br>');
+                // Splitte an $...$
+                const parts = [];
+                let lastIndex = 0;
+                let regex = /\$(.+?)\$/g;
+                let match;
+                while ((match = regex.exec(text)) !== null) {
+                    if (match.index > lastIndex) {
+                        // Text vor $...$
+                        parts.push({ type: 'text', value: text.slice(lastIndex, match.index) });
+                    }
+                    parts.push({ type: 'latex', value: match[1] });
+                    lastIndex = regex.lastIndex;
                 }
+                if (lastIndex < text.length) {
+                    parts.push({ type: 'text', value: text.slice(lastIndex) });
+                }
+                // Baue HTML
+                return parts.map(part => {
+                    if (part.type === 'latex') {
+                        return `<span class="mathjax-content">$${part.value}$</span>`;
+                    } else {
+                        // HTML escapen, aber <br> erhalten
+                        return part.value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+                    }
+                }).join('');
             }
-            const html = `<span class="mathjax-content">${qt}</span>`;
+
+            const html = renderQuestionSegments(questionText);
             this.createSimpleModal('Frage', html, 'Weiter', onNext, { layout: 'qa', modalType: 'question', isHtml: true, buttonClass: 'qa-next-btn', afterRender: (modal) => {
+                // Alle LaTeX-Teile rendern
                 if (window.MathJax && window.MathJax.typesetPromise) {
-                    const el = modal.querySelector('.mathjax-content');
-                    if (el) window.MathJax.typesetPromise([el]);
+                    const els = modal.querySelectorAll('.mathjax-content');
+                    if (els && els.length) window.MathJax.typesetPromise(Array.from(els));
                 }
             }});
         },
@@ -1563,6 +1585,68 @@ const app = {
             throw new Error('Die KI-Antwort enthält keine gültigen Kategorien.');
         }
 
+
+        // Hilfsfunktion: Korrigiere häufige LLM-Fehler in LaTeX, aber nur wenn es wirklich wie LaTeX aussieht
+        // Protokolliert Änderungen in ein Array
+        function fixLatex(str, protokoll, context) {
+            if (typeof str !== 'string') return str;
+            let s = str;
+            if (!looksLikeLatex(s)) return s;
+            function logChange(alt, neu, info) {
+                if (protokoll && alt !== neu) protokoll.push({ alt, neu, info });
+            }
+            let before;
+            // 1. "rac{" nur ersetzen, wenn nicht schon ein Backslash oder Buchstabe davor steht
+            before = s; s = s.replace(/(^|[^a-zA-Z\\])rac\{/g, '$1\\frac{'); logChange(before, s, context + ' rac→frac');
+            // 2. "ext{" nur ersetzen, wenn nicht schon ein Backslash oder Buchstabe davor steht
+            before = s; s = s.replace(/(^|[^a-zA-Z\\])ext\{/g, '$1\\text{'); logChange(before, s, context + ' ext→text');
+            // 3. Fehlende Backslashes vor frac, sqrt, etc. (aber nicht doppelt)
+            before = s; s = s.replace(/(?<!\\)frac\{/g, '\\frac{'); logChange(before, s, context + ' frac');
+            before = s; s = s.replace(/(?<!\\)sqrt\{/g, '\\sqrt{'); logChange(before, s, context + ' sqrt');
+            // 4. Fehlende Backslashes vor log, sin, cos, tan
+            before = s; s = s.replace(/(?<!\\)log\b/g, '\\log'); logChange(before, s, context + ' log');
+            before = s; s = s.replace(/(?<!\\)sin\b/g, '\\sin'); logChange(before, s, context + ' sin');
+            before = s; s = s.replace(/(?<!\\)cos\b/g, '\\cos'); logChange(before, s, context + ' cos');
+            before = s; s = s.replace(/(?<!\\)tan\b/g, '\\tan'); logChange(before, s, context + ' tan');
+            // 5. Automatische Korrektur für (\\frac{...}{...}) → \\left(\\frac{...}{...}\\right)
+            before = s; s = s.replace(/\((\\frac\{[^}]+\}\{[^}]+\})\)/g, '\\left($1\\right)'); logChange(before, s, context + ' (frac)');
+            // 6. Speziell: Einzelnes \f gefolgt von Zahl oder Klammer durch \frac ersetzen, aber nicht wenn schon "frac" folgt
+            before = s; s = s.replace(/\\f\s*(\d|\{)/g, '\\frac$1'); logChange(before, s, context + ' \\f→\\frac');
+            // 7. Entferne einzelne Backslashes nur vor Zeichen, die KEIN valides LaTeX-Kommando sind, aber NICHT vor "f" oder "t" (um "frac" und "text" zu schützen)
+            before = s; s = s.replace(/\\([rabcdeghjklmnopqsuvwxyz])(?![a-zA-Z])/g, ''); logChange(before, s, context + ' einzelne Backslashes');
+            return s;
+        }
+    // Änderungsprotokoll für alle Fragen/Antworten
+    const latexChangeLog = [];
+
+        // Hilfsfunktion: Erkennt, ob ein String wie eine LaTeX-Formel aussieht
+        function looksLikeLatex(str) {
+            if (!str) return false;
+            // Enthält typische LaTeX-Kommandos oder Operatoren, aber nicht nur ein "r" oder "f" am Anfang
+            return /\\(ce|mathrm|frac|sqrt|sum|int|rho|pi|cdot|alpha|beta|gamma|Delta|theta|mu|nu|lambda|phi|psi|Omega|leq|geq|neq|approx|rightarrow|leftarrow|infty|partial|dots|over|under|hat|bar|vec|dot|times|pm|div|sin|cos|tan|log|ln|exp)|\^|_|\{|\}/.test(str);
+        }
+
+        // Hilfsfunktion: Setzt $...$ um Formeln, falls nötig
+        function autoWrapLatex(str) {
+            if (!str) return str;
+            let s = str.trim();
+            // Bereits in $...$?
+            if (s.startsWith('$') && s.endsWith('$')) return s;
+            // Nur Formel?
+            if (looksLikeLatex(s)) return `$${s}$`;
+            // Gemischter Inhalt: Suche Gleichheitszeichen mit Formel
+            if (/=/.test(s) && looksLikeLatex(s)) {
+                // Versuche ab erstem = alles als Formel zu wrappen
+                const eqIdx = s.indexOf('=');
+                const left = s.slice(0, eqIdx + 1);
+                const right = s.slice(eqIdx + 1);
+                if (looksLikeLatex(right)) {
+                    return `${left} $${right.trim()}$`;
+                }
+            }
+            return s;
+        }
+
         const categories = categoriesSource.map((cat, cIdx) => {
             const name = (cat && typeof cat.name === 'string' && cat.name.trim())
                 ? cat.name.trim()
@@ -1578,11 +1662,24 @@ const app = {
                 const points = Number.isInteger(pointsNum) && pointsNum > 0
                     ? pointsNum
                     : 100 * (qIdx + 1);
-                const question = typeof q?.question === 'string' ? q.question.trim() : '';
-                const answer = typeof q?.answer === 'string' ? q.answer.trim() : '';
+                let question = typeof q?.question === 'string' ? q.question.trim() : '';
+                let answer = typeof q?.answer === 'string' ? q.answer.trim() : '';
 
                 if (!question || !answer) {
                     throw new Error(`Frage ${qIdx + 1} in Kategorie ${cIdx + 1} ist unvollständig.`);
+                }
+
+                // Frage: Nur $...$-Bereiche korrigieren
+                question = question.replace(/\$(.+?)\$/g, (match, p1) => {
+                    const fixed = fixLatex(p1, latexChangeLog, `Frage [${cat.name} #${qIdx + 1}]`);
+                    return `$${fixed}$`;
+                });
+
+                // Antwort: Nur auf Antworten anwenden, die wie LaTeX aussehen
+                if (looksLikeLatex(answer)) {
+                    const orig = answer;
+                    const fixed = fixLatex(answer, latexChangeLog, `Antwort [${cat.name} #${qIdx + 1}]`);
+                    answer = autoWrapLatex(fixed);
                 }
 
                 return {
@@ -1604,6 +1701,16 @@ const app = {
         const quizTitle = (parsed.quizTitle || parsed.title || '').toString().trim() ||
             (generatedTitle ? `KI-Quiz: ${generatedTitle}` : 'KI-Quiz');
 
+        // Nach dem Import ggf. Änderungsprotokoll anzeigen
+        if (latexChangeLog.length > 0) {
+            let protokoll = 'Automatische Korrekturen an LaTeX-Formeln beim Import:\n';
+            protokoll += 'Nr. | Kontext | alt | neu\n';
+            latexChangeLog.slice(0, 15).forEach((c, i) => {
+                protokoll += `${i + 1}. | ${c.info} | ${c.alt} | ${c.neu}\n`;
+            });
+            if (latexChangeLog.length > 15) protokoll += `... und ${latexChangeLog.length - 15} weitere ...\n`;
+            alert(protokoll);
+        }
         return { quizTitle, categories };
     },
 
@@ -1614,15 +1721,68 @@ const app = {
         try {
             const jsonText = this.extractJsonFromAiResponse(input.value);
             let parsed;
+            let parseError = null;
             try {
                 parsed = JSON.parse(jsonText);
             } catch (err1) {
-                // Automatisch Backslashes escapen und erneut versuchen
-                const fixed = jsonText.replace(/\\(?![\\"/bfnrtu])/g, "\\\\").replace(/(?<!\\)\\(?![\\"/bfnrtu])/g, "\\\\");
-                try {
-                    parsed = JSON.parse(fixed);
-                } catch (err2) {
-                    alert('Import fehlgeschlagen: ' + err1.message + '\nAutomatische Korrektur hat nicht geholfen.');
+                parseError = err1;
+            }
+            if (!parsed) {
+                // Fehleranalyse: Finde alle einzelnen Backslashes, nicht korrekt escaped
+                const regex = /(?<!\\)\\(?![\\"/bfnrtu])/g;
+                let match;
+                let errorCount = 0;
+                let errorContexts = [];
+                while ((match = regex.exec(jsonText)) !== null) {
+                    errorCount++;
+                    const start = Math.max(0, match.index - 12);
+                    const end = Math.min(jsonText.length, match.index + 12);
+                    errorContexts.push(jsonText.slice(start, end));
+                }
+                let msg = `Das JSON ist fehlerhaft und konnte nicht importiert werden.\n`;
+                msg += `Gefundene potenzielle Fehlerstellen (Backslashes, die nicht korrekt escaped sind): ${errorCount}`;
+                if (errorCount > 0) {
+                    msg += "\nBeispiele (im Kontext):\n" + errorContexts.slice(0, 5).map((c, i) => `${i + 1}. ...${c}...`).join("\n");
+                }
+                msg += "\nSoll eine automatische Korrektur versucht werden?";
+                if (confirm(msg)) {
+                    // Korrektur durchführen und Änderungen protokollieren
+                    let changes = [];
+                    let fixed = jsonText.replace(regex, (m, offset) => {
+                        const before = jsonText.slice(Math.max(0, offset - 12), offset + 2);
+                        const after = jsonText.slice(Math.max(0, offset - 12), offset + 2).replace(/\\/g, "\\\\");
+                        changes.push({ alt: before, neu: after });
+                        return "\\\\";
+                    });
+                    let fixedParsed;
+                    try {
+                        fixedParsed = JSON.parse(fixed);
+                    } catch (err2) {
+                        let msg2 = 'Korrekturversuch fehlgeschlagen.\nFehler: ' + err2.message + '\n';
+                        msg2 += 'Mögliche Gründe: Nicht korrekt escaped, Syntaxfehler, fehlende oder zu viele Klammern/Anführungszeichen.';
+                        msg2 += '\nBitte prüfe das JSON manuell.';
+                        alert(msg2);
+                        return;
+                    }
+                    // Änderungsprotokoll anzeigen
+                    if (changes.length > 0) {
+                        let protokoll = 'Folgende Änderungen wurden vorgenommen (Kontext):\n';
+                        protokoll += 'Nr. | alt | neu\n';
+                        changes.slice(0, 10).forEach((c, i) => {
+                            protokoll += `${i + 1}. | ${c.alt} | ${c.neu}\n`;
+                        });
+                        if (changes.length > 10) protokoll += `... und ${changes.length - 10} weitere ...\n`;
+                        alert(protokoll);
+                    }
+                    parsed = fixedParsed;
+                } else {
+                    let msg2 = 'Import abgebrochen.\nMögliche Gründe für Fehler im JSON:\n';
+                    msg2 += '- Nicht korrekt escaped (Backslashes, Anführungszeichen)\n';
+                    msg2 += '- Syntaxfehler (fehlende oder zu viele Klammern/Anführungszeichen)\n';
+                    msg2 += '- Falsche Struktur (fehlende Felder)\n';
+                    msg2 += '\nGefundene Fehlerstellen (Kontext):\n';
+                    msg2 += errorContexts.slice(0, 10).map((c, i) => `${i + 1}. ...${c}...`).join("\n");
+                    alert(msg2);
                     return;
                 }
             }
