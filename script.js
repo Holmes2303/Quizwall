@@ -117,24 +117,48 @@ const app = {
             const body = document.createElement('div');
             body.className = 'qa-modal-body';
 
-            // Automatisch LaTeX/mhchem-Formeln in $...$ einbetten, falls nötig
-            let at = answerText;
-            // Auch allgemeine LaTeX-Kommandos und einfache Operatoren erkennen
-            if (!at.trim().startsWith('$')) {
-                const latexPattern = /\\(ce|mathrm|frac|sqrt|sum|int|rho|pi|cdot|alpha|beta|gamma|Delta|theta|mu|nu|lambda|phi|psi|Omega|leq|geq|neq|approx|rightarrow|leftarrow|infty|partial|dots|over|under|hat|bar|vec|dot|times|pm|div|sin|cos|tan|log|ln|exp)|\^|_/;
-                if (latexPattern.test(at)) {
-                    at = `$${at}$`;
+            function renderAnswerSegments(text) {
+                const safe = (text || '').replace(/\n/g, '<br>');
+                const parts = [];
+                let lastIndex = 0;
+                const regex = /\$(.+?)\$/g;
+                let match;
+
+                while ((match = regex.exec(safe)) !== null) {
+                    if (match.index > lastIndex) {
+                        parts.push({ type: 'text', value: safe.slice(lastIndex, match.index) });
+                    }
+                    parts.push({ type: 'latex', value: match[1] });
+                    lastIndex = regex.lastIndex;
                 }
+
+                if (lastIndex < safe.length) {
+                    parts.push({ type: 'text', value: safe.slice(lastIndex) });
+                }
+
+                return parts.map(part => {
+                    if (part.type === 'latex') {
+                        return `<span class="mathjax-content">$${part.value}$</span>`;
+                    }
+                    return part.value
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/\n/g, '<br>');
+                }).join('');
             }
 
             const content = document.createElement('div');
-            content.className = 'answer-text mathjax-content';
-            content.innerHTML = at;
+            content.className = 'answer-text';
+            content.innerHTML = renderAnswerSegments(answerText);
             body.appendChild(content);
             // Nach dem Einfügen MathJax nur auf das relevante Element anwenden
             setTimeout(() => {
                 if (window.MathJax && window.MathJax.typesetPromise) {
-                    window.MathJax.typesetPromise([content]);
+                    const els = content.querySelectorAll('.mathjax-content');
+                    if (els && els.length) {
+                        window.MathJax.typesetPromise(Array.from(els));
+                    }
                 }
             }, 0);
 
@@ -1694,19 +1718,32 @@ const app = {
             if (!str) return str;
             let s = str.trim();
             // Bereits in $...$?
-            if (s.startsWith('$') && s.endsWith('$')) return s;
-            // Nur Formel?
-            if (looksLikeLatex(s)) return `$${s}$`;
-            // Gemischter Inhalt: Suche Gleichheitszeichen mit Formel
-            if (/=/.test(s) && looksLikeLatex(s)) {
-                // Versuche ab erstem = alles als Formel zu wrappen
-                const eqIdx = s.indexOf('=');
-                const left = s.slice(0, eqIdx + 1);
-                const right = s.slice(eqIdx + 1);
-                if (looksLikeLatex(right)) {
-                    return `${left} $${right.trim()}$`;
+            if (s.startsWith('$') && s.endsWith('$')) {
+                const dollarCount = (s.match(/\$/g) || []).length;
+                // Repariert alte Artefakte wie "$Text ... $x$ ... $$"
+                if (dollarCount > 2) {
+                    let candidate = s.replace(/^\$/, '');
+                    if (candidate.endsWith('$$')) {
+                        candidate = candidate.slice(0, -2);
+                    } else if (candidate.endsWith('$')) {
+                        candidate = candidate.slice(0, -1);
+                    }
+                    if ((candidate.match(/\$/g) || []).length >= 2) {
+                        return candidate.trim();
+                    }
                 }
+                return s;
             }
+            // Bei vorhandenem $ niemals global wrappen (verhindert verschachtelte/kaputte Delimiter)
+            if (s.includes('$')) return s;
+
+            // Gemischte Fließtext-Antworten nicht komplett in Math-Mode setzen.
+            const longWordMatches = s.match(/[A-Za-zÄÖÜäöüß]{3,}/g) || [];
+            const seemsNaturalLanguage = longWordMatches.length >= 3 && /\s/.test(s);
+            if (seemsNaturalLanguage) return s;
+
+            // Reine Formeln ohne Delimiter ergänzen.
+            if (looksLikeLatex(s)) return `$${s}$`;
             return s;
         }
 
@@ -1740,7 +1777,6 @@ const app = {
 
                 // Antwort: Nur auf Antworten anwenden, die wie LaTeX aussehen
                 if (looksLikeLatex(answer)) {
-                    const orig = answer;
                     const fixed = fixLatex(answer, latexChangeLog, `Antwort [${cat.name} #${qIdx + 1}]`);
                     answer = autoWrapLatex(fixed);
                 }
