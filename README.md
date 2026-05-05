@@ -230,6 +230,11 @@ Im Repository ist aktuell keine separate Lizenzdatei hinterlegt.
 
 ## Changelog
 
+### Version 2026.05.05 (V1 beta 10)
+- Stabiler KI-Import mit automatischer Reparatur.
+- Reparatur beschädigter LaTeX-Sequenzen beim Import und Laden von Quizdateien.
+- Durchgängige horizontale Zentrierung der Weiter-Schaltflächen auf Modal-Ebene, auch im Querformat.
+
 ### 2026-04-24 (V1 beta 3)
 
 - MathJax/LaTeX-Rendering für mathematische und chemische Formeln in Fragen und Antworten vollständig integriert (inkl. dynamischer Modals, $...$-Syntax und \ce{...} für Chemie).
@@ -265,4 +270,3 @@ Im Repository ist aktuell keine separate Lizenzdatei hinterlegt.
   - Settings-Screen
   - Quiz-Wall (Portrait/Scroll-Puffer)
   - Frage-/Antwort-/Ranking-/Punkte-anpassen-Karten
-- Vollbild-Floating-Button testweise eingebaut und anschliessend vollstaendig wieder entfernt (To-do fuer spaeter).

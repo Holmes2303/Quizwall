@@ -586,7 +586,10 @@ const app = {
             modalRoot.classList.toggle('is-portrait', !isLandscape);
 
             [1, 2, 3, 4].forEach((count) => modalRoot.classList.remove(`modal-actions-${count}`));
-            const actionColumns = isLandscape ? Math.min(4, Math.max(2, buttonCount || 2)) : 1;
+            const normalizedButtonCount = Math.max(1, buttonCount || 1);
+            const actionColumns = isLandscape
+                ? Math.min(4, normalizedButtonCount)
+                : 1;
             modalRoot.classList.add(`modal-actions-${actionColumns}`);
 
             const cardWidthPx = Math.max(280, Math.round(vw * 0.92));

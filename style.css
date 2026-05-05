@@ -3741,6 +3741,8 @@ html.layout-desktop .quiz-sidebar {
 .custom-modal.custom-modal-responsive .button-group {
     width: 100%;
     display: grid !important;
+    justify-items: center;
+    align-items: center;
     gap: clamp(0.45rem, 1.4vw, 1.2rem);
 }
 
@@ -3769,6 +3771,7 @@ html.layout-desktop .quiz-sidebar {
 .custom-modal.custom-modal-responsive .modal-content > .btn {
     min-height: clamp(2.5rem, 7svh, 4.4rem);
     font-size: var(--modal-button-font-size) !important;
+    justify-self: center;
 }
 
 .custom-modal.custom-modal-responsive.is-portrait .qa-modal-actions,
