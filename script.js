@@ -1575,6 +1575,26 @@ const app = {
         return text.slice(start, end + 1);
     },
 
+    escapeLikelyLatexBackslashesInJson(jsonText) {
+        if (typeof jsonText !== 'string' || !jsonText) return jsonText;
+
+        const latexCommands = [
+            'ce', 'mathrm', 'text', 'frac', 'sqrt', 'sum', 'int', 'rho', 'pi', 'cdot',
+            'alpha', 'beta', 'gamma', 'Delta', 'theta', 'mu', 'nu', 'lambda', 'phi', 'psi', 'Omega',
+            'leq', 'geq', 'neq', 'approx', 'rightarrow', 'leftarrow', 'infty', 'partial',
+            'dots', 'over', 'under', 'hat', 'bar', 'vec', 'dot', 'times', 'pm', 'div',
+            'sin', 'cos', 'tan', 'log', 'ln', 'exp'
+        ];
+
+        const escapedCmds = latexCommands
+            .slice()
+            .sort((a, b) => b.length - a.length)
+            .map(cmd => cmd.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+
+        const cmdRegex = new RegExp(`(?<!\\\\)\\\\(?=(?:${escapedCmds.join('|')})(?![A-Za-z]))`, 'g');
+        return jsonText.replace(cmdRegex, '\\\\');
+    },
+
     normalizeImportedQuiz(parsed) {
         const categoriesSource = Array.isArray(parsed.categories)
             ? parsed.categories
@@ -1589,11 +1609,48 @@ const app = {
         }
 
 
+        // Hilfsfunktion: Repariert typische Artefakte aus fehlerhaft escaped JSON-LaTeX (z.B. \f, \r, \t als Steuerzeichen)
+        function repairCorruptedLatexEscapes(str) {
+            if (typeof str !== 'string' || !str) return str;
+
+            let s = str;
+            const ctrl = {
+                ff: String.fromCharCode(12),
+                cr: String.fromCharCode(13),
+                tab: String.fromCharCode(9),
+                nl: String.fromCharCode(10),
+                bs: String.fromCharCode(8)
+            };
+
+            // Aus \frac wird bei fehlerhaftem JSON oft Formfeed + "rac"
+            s = s.replace(new RegExp(`${ctrl.ff}\\\\?frac\\{`, 'g'), '\\frac{');
+            s = s.replace(new RegExp(`${ctrl.ff}rac\\{`, 'g'), '\\frac{');
+
+            // \rho und \beta/\nu/\theta/\tan/\text können in CR/BS/NL/TAB umkippen
+            s = s.replace(new RegExp(`${ctrl.cr}\\\\?rho\\b`, 'g'), '\\rho');
+            s = s.replace(new RegExp(`${ctrl.cr}ho\\b`, 'g'), '\\rho');
+            s = s.replace(new RegExp(`${ctrl.bs}\\\\?beta\\b`, 'g'), '\\beta');
+            s = s.replace(new RegExp(`${ctrl.bs}eta\\b`, 'g'), '\\beta');
+            s = s.replace(new RegExp(`${ctrl.nl}\\\\?nu\\b`, 'g'), '\\nu');
+            s = s.replace(new RegExp(`${ctrl.nl}u\\b`, 'g'), '\\nu');
+            s = s.replace(new RegExp(`${ctrl.tab}\\\\?theta\\b`, 'g'), '\\theta');
+            s = s.replace(new RegExp(`${ctrl.tab}heta\\b`, 'g'), '\\theta');
+            s = s.replace(new RegExp(`${ctrl.tab}\\\\?tan\\b`, 'g'), '\\tan');
+            s = s.replace(new RegExp(`${ctrl.tab}an\\b`, 'g'), '\\tan');
+            s = s.replace(new RegExp(`${ctrl.tab}\\\\?text\\{`, 'g'), '\\text{');
+            s = s.replace(new RegExp(`${ctrl.tab}ext\\{`, 'g'), '\\text{');
+
+            // Verbliebene Steuerzeichen direkt vor LaTeX-Befehlen entfernen
+            s = s.replace(/[\u0008\u0009\u000A\u000C\u000D]+(?=\\[A-Za-z])/g, '');
+
+            return s;
+        }
+
         // Hilfsfunktion: Korrigiere häufige LLM-Fehler in LaTeX, aber nur wenn es wirklich wie LaTeX aussieht
         // Protokolliert Änderungen in ein Array
         function fixLatex(str, protokoll, context) {
             if (typeof str !== 'string') return str;
-            let s = str;
+            let s = repairCorruptedLatexEscapes(str);
             if (!looksLikeLatex(s)) return s;
             function logChange(alt, neu, info) {
                 if (protokoll && alt !== neu) protokoll.push({ alt, neu, info });
@@ -1728,6 +1785,9 @@ const app = {
             if (typographicQuotes.test(jsonText)) {
                 jsonText = jsonText.replace(/[“”„‟❝❞＂«»‘’‚‛❮❯‹›]/g, '"');
             }
+            // Vor dem Parsen unescaped LaTeX-Backslashes absichern,
+            // damit \f/\r/\t nicht als Steuerzeichen interpretiert werden.
+            jsonText = this.escapeLikelyLatexBackslashesInJson(jsonText);
             let parsed;
             let parseError = null;
             try {
@@ -1738,62 +1798,13 @@ const app = {
             if (!parsed) {
                 // Fehleranalyse: Finde alle einzelnen Backslashes, nicht korrekt escaped
                 const regex = /(?<!\\)\\(?![\\"/bfnrtu])/g;
-                let match;
-                let errorCount = 0;
-                let errorContexts = [];
-                while ((match = regex.exec(jsonText)) !== null) {
-                    errorCount++;
-                    const start = Math.max(0, match.index - 12);
-                    const end = Math.min(jsonText.length, match.index + 12);
-                    errorContexts.push(jsonText.slice(start, end));
-                }
-                let msg = `Das JSON ist fehlerhaft und konnte nicht importiert werden.\n`;
-                msg += `Gefundene potenzielle Fehlerstellen (Backslashes, die nicht korrekt escaped sind): ${errorCount}`;
-                if (errorCount > 0) {
-                    msg += "\nBeispiele (im Kontext):\n" + errorContexts.slice(0, 5).map((c, i) => `${i + 1}. ...${c}...`).join("\n");
-                }
-                msg += "\nSoll eine automatische Korrektur versucht werden?";
-                msg += "\n\nHinweis: Auf Apple-Geräten (macOS/iOS) und in manchen Textverarbeitungen werden oft typografische Anführungszeichen verwendet. Bitte ersetze diese durch normale doppelte Anführungszeichen (\").";
-                if (confirm(msg)) {
-                    // Korrektur durchführen und Änderungen protokollieren
-                    let changes = [];
-                    let fixed = jsonText.replace(regex, (m, offset) => {
-                        const before = jsonText.slice(Math.max(0, offset - 12), offset + 2);
-                        const after = jsonText.slice(Math.max(0, offset - 12), offset + 2).replace(/\\/g, "\\\\");
-                        changes.push({ alt: before, neu: after });
-                        return "\\\\";
-                    });
-                    let fixedParsed;
-                    try {
-                        fixedParsed = JSON.parse(fixed);
-                    } catch (err2) {
-                        let msg2 = 'Korrekturversuch fehlgeschlagen.\nFehler: ' + err2.message + '\n';
-                        msg2 += 'Mögliche Gründe: Nicht korrekt escaped, Syntaxfehler, fehlende oder zu viele Klammern/Anführungszeichen.';
-                        msg2 += '\nBitte prüfe das JSON manuell.';
-                        alert(msg2);
-                        return;
-                    }
-                    // Änderungsprotokoll anzeigen
-                    if (changes.length > 0) {
-                        let protokoll = 'Folgende Änderungen wurden vorgenommen (Kontext):\n';
-                        protokoll += 'Nr. | alt | neu\n';
-                        changes.slice(0, 10).forEach((c, i) => {
-                            protokoll += `${i + 1}. | ${c.alt} | ${c.neu}\n`;
-                        });
-                        if (changes.length > 10) protokoll += `... und ${changes.length - 10} weitere ...\n`;
-                        alert(protokoll);
-                    }
-                    parsed = fixedParsed;
-                } else {
-                    let msg2 = 'Import abgebrochen.\nMögliche Gründe für Fehler im JSON:\n';
-                    msg2 += '- Nicht korrekt escaped (Backslashes, Anführungszeichen)\n';
-                    msg2 += '- Syntaxfehler (fehlende oder zu viele Klammern/Anführungszeichen)\n';
-                    msg2 += '- Falsche Struktur (fehlende Felder)\n';
-                    msg2 += '\nGefundene Fehlerstellen (Kontext):\n';
-                    msg2 += errorContexts.slice(0, 10).map((c, i) => `${i + 1}. ...${c}...`).join("\n");
-                    msg2 += '\n\nHinweis: Auf Apple-Geräten (macOS/iOS) und in manchen Textverarbeitungen werden oft typografische Anführungszeichen verwendet. Bitte ersetze diese durch normale doppelte Anführungszeichen (\").';
-                    alert(msg2);
-                    return;
+                const fixed = jsonText.replace(regex, '\\\\');
+                try {
+                    parsed = JSON.parse(fixed);
+                } catch (err2) {
+                    throw new Error(
+                        'Das JSON konnte auch nach automatischer Reparatur nicht importiert werden: ' + err2.message
+                    );
                 }
             }
             const imported = this.normalizeImportedQuiz(parsed);
@@ -2167,16 +2178,10 @@ const app = {
         reader.onload = (e) => {
             try {
                 const parsed = JSON.parse(e.target.result);
-                const categories = Array.isArray(parsed.categories)
-                    ? parsed.categories
-                    : (parsed.game && Array.isArray(parsed.game.categories) ? parsed.game.categories : null);
+                const imported = this.normalizeImportedQuiz(parsed);
 
-                if (!categories || categories.length === 0) {
-                    throw new Error('Keine gültigen Kategorien gefunden.');
-                }
-
-                this.state.editor.categories = categories;
-                this.state.quizTitle = parsed.quizTitle || parsed.title || 'QuizWallah';
+                this.state.editor.categories = imported.categories;
+                this.state.quizTitle = imported.quizTitle || 'QuizWallah';
                 this.state.game = null;
                 this.state.victoryCeremonyShown = false;
                 this.state.playedQuestions = new Set();

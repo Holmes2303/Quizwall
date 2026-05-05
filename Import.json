@@ -1,0 +1,45 @@
+{
+"quizTitle": "MINT-Formeln Mittelstufe",
+"categories": [
+{
+"name": "Geschwindigkeit & Weg",
+"questions": [
+{ "points": 100, "question": "Gib die Formel für die Geschwindigkeit an.", "answer": "$v = \frac{s}{t}$" },
+{ "points": 200, "question": "Stelle die Formel $v = \frac{s}{t}$ nach $s$ um.", "answer": "$s = v \cdot t$" },
+{ "points": 300, "question": "Stelle die Formel $v = \frac{s}{t}$ nach $t$ um.", "answer": "$t = \frac{s}{v}$" },
+{ "points": 400, "question": "Ein Auto fährt mit $v = 20\,\mathrm{m/s}$ für $t = 10\,\mathrm{s}$. Berechne den Weg.", "answer": "$s = 200\,\mathrm{m}$" },
+{ "points": 500, "question": "Ein Körper legt $s = 150\,\mathrm{m}$ in $t = 5\,\mathrm{s}$ zurück. Berechne $v$.", "answer": "$v = 30\,\mathrm{m/s}$" }
+]
+},
+{
+"name": "Flächen & Volumen",
+"questions": [
+{ "points": 100, "question": "Formel für die Fläche eines Rechtecks?", "answer": "$A = a \cdot b$" },
+{ "points": 200, "question": "Formel für die Fläche eines Kreises?", "answer": "$A = \pi r^2$" },
+{ "points": 300, "question": "Formel für das Volumen eines Quaders?", "answer": "$V = a \cdot b \cdot c$" },
+{ "points": 400, "question": "Ein Quadrat hat Seitenlänge $a = 4\,\mathrm{cm}$. Berechne $A$.", "answer": "$A = 16\,\mathrm{cm^2}$" },
+{ "points": 500, "question": "Ein Kreis hat $r = 3\,\mathrm{cm}$. Berechne die Fläche.", "answer": "$A = 9\pi\,\mathrm{cm^2}$" }
+]
+},
+{
+"name": "Dichte & Masse",
+"questions": [
+{ "points": 100, "question": "Formel für die Dichte?", "answer": "$\rho = \frac{m}{V}$" },
+{ "points": 200, "question": "Stelle $\rho = \frac{m}{V}$ nach $m$ um.", "answer": "$m = \rho \cdot V$" },
+{ "points": 300, "question": "Stelle $\rho = \frac{m}{V}$ nach $V$ um.", "answer": "$V = \frac{m}{\rho}$" },
+{ "points": 400, "question": "Gegeben: $m = 10\,\mathrm{kg}$, $V = 2\,\mathrm{m^3}$. Berechne $\rho$.", "answer": "$\rho = 5\,\mathrm{kg/m^3}$" },
+{ "points": 500, "question": "Gegeben: $\rho = 8\,\mathrm{kg/m^3}$, $V = 3\,\mathrm{m^3}$. Berechne $m$.", "answer": "$m = 24\,\mathrm{kg}$" }
+]
+},
+{
+"name": "Chemie Grundlagen",
+"questions": [
+{ "points": 100, "question": "Wie lautet die Summenformel von Wasser?", "answer": "$\ce{H2O}$" },
+{ "points": 200, "question": "Wie lautet die Reaktionsgleichung für die Bildung von Wasser aus Wasserstoff und Sauerstoff?", "answer": "$\ce{2H2 + O2 -> 2H2O}$" },
+{ "points": 300, "question": "Wie lautet die Summenformel von Kohlenstoffdioxid?", "answer": "$\ce{CO2}$" },
+{ "points": 400, "question": "Wie lautet die Reaktionsgleichung der Verbrennung von Methan?", "answer": "$\ce{CH4 + 2O2 -> CO2 + 2H2O}$" },
+{ "points": 500, "question": "Wie lautet die Summenformel von Natriumchlorid?", "answer": "$\ce{NaCl}$" }
+]
+}
+]
+}
