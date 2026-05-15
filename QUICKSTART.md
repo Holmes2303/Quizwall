@@ -37,6 +37,7 @@ Erstelle Quiz von Grund auf:
 **Export & Import**:
 - Klick "⬇️ Herunterladen (JSON)" → Quiz als Datei speichern
 - Hauptmenü: "📂 Spiel laden" → Vorher gespeicherte Quiz laden
+- Für LaTeX-Sonderfälle kann `latex-regression-quiz.json` als schneller Regressionstest importiert werden
 
 ### 3. **Gameplay**
 **Exakte Ablauffolge:**

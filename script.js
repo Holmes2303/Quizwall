@@ -75,7 +75,7 @@ const app = {
                 // Splitte an $...$
                 const parts = [];
                 let lastIndex = 0;
-                let regex = /\$(.+?)\$|(\\ce\{[^{}]+\})/g;
+                let regex = /\$(.+?)\$|((?:\\(?:[A-Za-z]+|[,;%])(?:\{[^{}]*\})*(?:[_^](?:\{[^{}]*\}|[A-Za-z0-9]))*)|(?:[A-Za-z0-9]+(?:[_^](?:\{[^{}]*\}|[A-Za-z0-9]))+))/g;
                 let match;
                 while ((match = regex.exec(text)) !== null) {
                     if (match.index > lastIndex) {
@@ -122,7 +122,7 @@ const app = {
                 const safe = (text || '').replace(/\n/g, '<br>');
                 const parts = [];
                 let lastIndex = 0;
-                const regex = /\$(.+?)\$|(\\ce\{[^{}]+\})/g;
+                const regex = /\$(.+?)\$|((?:\\(?:[A-Za-z]+|[,;%])(?:\{[^{}]*\})*(?:[_^](?:\{[^{}]*\}|[A-Za-z0-9]))*)|(?:[A-Za-z0-9]+(?:[_^](?:\{[^{}]*\}|[A-Za-z0-9]))+))/g;
                 let match;
 
                 while ((match = regex.exec(safe)) !== null) {
@@ -1624,7 +1624,8 @@ const app = {
         return jsonText.replace(cmdRegex, '\\\\');
     },
 
-    normalizeImportedQuiz(parsed) {
+    normalizeImportedQuiz(parsed, options = {}) {
+        const showLatexLog = options.showLatexLog !== false;
         const categoriesSource = Array.isArray(parsed.categories)
             ? parsed.categories
             : (parsed.quiz && Array.isArray(parsed.quiz.categories)
@@ -1701,8 +1702,9 @@ const app = {
             before = s; s = s.replace(/\((\\frac\{[^}]+\}\{[^}]+\})\)/g, '\\left($1\\right)'); logChange(before, s, context + ' (frac)');
             // 6. Speziell: Einzelnes \f gefolgt von Zahl oder Klammer durch \frac ersetzen, aber nicht wenn schon "frac" folgt
             before = s; s = s.replace(/\\f\s*(\d|\{)/g, '\\frac$1'); logChange(before, s, context + ' \\f→\\frac');
-            // 7. Entferne einzelne Backslashes nur vor Zeichen, die KEIN valides LaTeX-Kommando sind, aber NICHT vor "f" oder "t" (um "frac" und "text" zu schützen)
-            before = s; s = s.replace(/\\([rabcdeghjklmnopqsuvwxyz])(?![a-zA-Z])/g, ''); logChange(before, s, context + ' einzelne Backslashes');
+            // 7. Entferne einzelne Backslashes nur sehr konservativ,
+            // damit Text-Diakritik-Kommandos wie \v{c} oder \'{c} nicht zerstört werden.
+            before = s; s = s.replace(/\\([abegjlmopqswyz])(?![a-zA-Z{])/g, ''); logChange(before, s, context + ' einzelne Backslashes');
             return s;
         }
     // Änderungsprotokoll für alle Fragen/Antworten
@@ -1749,6 +1751,118 @@ const app = {
             return s;
         }
 
+        // Wandelt typische LaTeX-Diakritika in Unicode um (Textkontext),
+        // damit z. B. Mohorovi\v{c}i\'{c} lesbar als Mohorovičić erscheint.
+        function decodeLatexTextDiacritics(str) {
+            if (typeof str !== 'string' || !str) return str;
+            let s = str;
+
+            const acute = { a: 'á', e: 'é', i: 'í', o: 'ó', u: 'ú', y: 'ý', c: 'ć', n: 'ń', z: 'ź', s: 'ś', l: 'ĺ', r: 'ŕ', A: 'Á', E: 'É', I: 'Í', O: 'Ó', U: 'Ú', Y: 'Ý', C: 'Ć', N: 'Ń', Z: 'Ź', S: 'Ś', L: 'Ĺ', R: 'Ŕ' };
+            const caron = { c: 'č', s: 'š', z: 'ž', r: 'ř', d: 'ď', t: 'ť', n: 'ň', l: 'ľ', e: 'ě', C: 'Č', S: 'Š', Z: 'Ž', R: 'Ř', D: 'Ď', T: 'Ť', N: 'Ň', L: 'Ľ', E: 'Ě' };
+            const umlaut = { a: 'ä', e: 'ë', i: 'ï', o: 'ö', u: 'ü', y: 'ÿ', A: 'Ä', E: 'Ë', I: 'Ï', O: 'Ö', U: 'Ü', Y: 'Ÿ' };
+            const grave = { a: 'à', e: 'è', i: 'ì', o: 'ò', u: 'ù', A: 'À', E: 'È', I: 'Ì', O: 'Ò', U: 'Ù' };
+            const circumflex = { a: 'â', e: 'ê', i: 'î', o: 'ô', u: 'û', A: 'Â', E: 'Ê', I: 'Î', O: 'Ô', U: 'Û' };
+            const tilde = { a: 'ã', n: 'ñ', o: 'õ', A: 'Ã', N: 'Ñ', O: 'Õ' };
+
+            const applyMap = (input, regex, map) => input.replace(regex, (m, ch) => map[ch] || m);
+
+            s = applyMap(s, /\\'\{?([A-Za-z])\}?/g, acute);
+            s = applyMap(s, /\\v\{?([A-Za-z])\}?/g, caron);
+            s = applyMap(s, /\\"\{?([A-Za-z])\}?/g, umlaut);
+            s = applyMap(s, /\\`\{?([A-Za-z])\}?/g, grave);
+            s = applyMap(s, /\\\^\{?([A-Za-z])\}?/g, circumflex);
+            s = applyMap(s, /\\~\{?([A-Za-z])\}?/g, tilde);
+
+            // Fallback nur für echte Wortfragmente wie "Mohorovi{c}ic".
+            // Nicht innerhalb von LaTeX-Kommandos anwenden, sonst wird z. B.
+            // "\mathrm{p}K" zu "\mathrmpK" beschädigt.
+            s = s.replace(/\b([A-Za-zÄÖÜäöüß]+)\{([A-Za-zÄÖÜäöüß])\}([A-Za-zÄÖÜäöüß]+)\b/g, '$1$2$3');
+
+            return s;
+        }
+
+        // Kanonisiert unwrapped Inline-LaTeX in gemischten Texten.
+        // So werden Exporte auf allen Geräten konsistent, auch wenn die KI mal ohne $...$ liefert.
+        function canonicalizeInlineLatexSegments(str, protokoll, context) {
+            if (typeof str !== 'string' || !str) return str;
+
+            function normalizeInlineMathDelimiters(input) {
+                if (typeof input !== 'string' || !input) return input;
+                let out = input;
+
+                // Display-Delimiter in diesem Projekt als Inline behandeln.
+                out = out.replace(/\$\$([^$]+)\$\$/g, '$$$1$');
+
+                // Direkt benachbarte Inline-Formeln zusammenfuehren: $a$$b$ -> $ab$
+                // (tritt bei Tokenisierung von zusammengesetzten Ausdruecken auf)
+                let prev;
+                do {
+                    prev = out;
+                    out = out.replace(/\$([^$]+)\$\$([^$]+)\$/g, '$$$1$2$');
+                } while (out !== prev);
+
+                return out;
+            }
+
+            str = normalizeInlineMathDelimiters(str);
+
+            const braced = '\\{(?:[^{}]|\\{[^{}]*\\})*\\}';
+            const script = `(?:[_^](?:${braced}|[A-Za-z0-9]))+`;
+            const command = '\\\\(?:ce|mathrm|text|frac|sqrt|sum|int|rho|pi|cdot|alpha|beta|gamma|Delta|theta|mu|nu|lambda|phi|psi|Omega|leq|geq|neq|approx|rightarrow|leftarrow|infty|partial|dots|over|under|hat|bar|vec|dot|times|pm|div|sin|cos|tan|log|ln|exp|omega)';
+            const commandExpr = `(?:${command}(?:${braced})*(?:${script})*)`;
+            const scriptedWordExpr = `(?:[A-Za-z0-9]+${script})`;
+            const tokenRegex = new RegExp(`${commandExpr}|${scriptedWordExpr}`, 'g');
+            const splitByMathRegex = /(\$[^$]+\$)/g;
+
+            function logInlineWrap(alt, neu, info) {
+                if (protokoll && alt !== neu) protokoll.push({ alt, neu, info });
+            }
+
+            function wrapFormulaParentheses(segment) {
+                return segment.replace(/\(([^()]+)\)/g, (full, inner) => {
+                    if (!inner || inner.includes('$')) return full;
+                    if (!looksLikeLatex(inner)) return full;
+                    const fixedInner = fixLatex(inner, protokoll, `${context} klammer-inhalt`);
+                    const wrapped = `($${fixedInner}$)`;
+                    logInlineWrap(full, wrapped, `${context} klammer-wrap`);
+                    return wrapped;
+                });
+            }
+
+            function wrapInlineTokens(segment) {
+                if (!segment) return segment;
+                const tokenParts = segment.split(splitByMathRegex);
+                return tokenParts.map((part) => {
+                    if (!part) return part;
+                    // Bereits gesetzte Math-Segmente unverändert lassen.
+                    if (/^\$[^$]+\$$/.test(part)) return part;
+
+                    return part.replace(tokenRegex, (token) => {
+                        const fixed = fixLatex(token, protokoll, `${context} inline-token`);
+                        const wrapped = `$${fixed}$`;
+                        logInlineWrap(token, wrapped, `${context} inline-wrap`);
+                        return wrapped;
+                    });
+                }).join('');
+            }
+
+            const parts = str.split(splitByMathRegex);
+            const normalized = parts.map((part) => {
+                if (!part) return part;
+
+                if (/^\$[^$]+\$$/.test(part)) {
+                    const inner = part.slice(1, -1);
+                    const fixedInner = fixLatex(inner, protokoll, `${context} bestehende-math`);
+                    return `$${fixedInner}$`;
+                }
+
+                const parenthesized = wrapFormulaParentheses(part);
+                return wrapInlineTokens(parenthesized);
+            }).join('');
+
+            return normalizeInlineMathDelimiters(normalized);
+        }
+
         const categories = categoriesSource.map((cat, cIdx) => {
             const name = (cat && typeof cat.name === 'string' && cat.name.trim())
                 ? cat.name.trim()
@@ -1767,19 +1881,30 @@ const app = {
                 let question = typeof q?.question === 'string' ? q.question.trim() : '';
                 let answer = typeof q?.answer === 'string' ? q.answer.trim() : '';
 
+                question = decodeLatexTextDiacritics(question);
+                answer = decodeLatexTextDiacritics(answer);
+
                 if (!question || !answer) {
                     throw new Error(`Frage ${qIdx + 1} in Kategorie ${cIdx + 1} ist unvollständig.`);
                 }
 
-                // Frage: Nur $...$-Bereiche korrigieren
-                question = question.replace(/\$(.+?)\$/g, (match, p1) => {
-                    const fixed = fixLatex(p1, latexChangeLog, `Frage [${cat.name} #${qIdx + 1}]`);
-                    return `$${fixed}$`;
-                });
+                // Einheitliche Kanonisierung für Fragen/Antworten:
+                // - bestehende $...$ reparieren
+                // - unwrapped Inline-LaTeX in $...$ setzen
+                question = canonicalizeInlineLatexSegments(
+                    question,
+                    latexChangeLog,
+                    `Frage [${cat.name} #${qIdx + 1}]`
+                );
 
-                // Antwort: Nur auf Antworten anwenden, die wie LaTeX aussehen
+                answer = canonicalizeInlineLatexSegments(
+                    answer,
+                    latexChangeLog,
+                    `Antwort [${cat.name} #${qIdx + 1}]`
+                );
+
                 if (looksLikeLatex(answer)) {
-                    const fixed = fixLatex(answer, latexChangeLog, `Antwort [${cat.name} #${qIdx + 1}]`);
+                    const fixed = fixLatex(answer, latexChangeLog, `Antwort [${cat.name} #${qIdx + 1}] post-fix`);
                     answer = autoWrapLatex(fixed);
                 }
 
@@ -1803,7 +1928,7 @@ const app = {
             (generatedTitle ? `KI-Quiz: ${generatedTitle}` : 'KI-Quiz');
 
         // Nach dem Import ggf. Änderungsprotokoll anzeigen
-        if (latexChangeLog.length > 0) {
+        if (showLatexLog && latexChangeLog.length > 0) {
             let protokoll = 'Automatische Korrekturen an LaTeX-Formeln beim Import:\n';
             protokoll += 'Nr. | Kontext | alt | neu\n';
             latexChangeLog.slice(0, 15).forEach((c, i) => {
@@ -3683,6 +3808,7 @@ const app = {
         const data = localStorage.getItem('quizwall_game');
         if (data) {
             const parsed = JSON.parse(data);
+            let shouldPersistNormalizedData = false;
 
             const parsedTeams = Array.isArray(parsed?.game?.teams)
                 ? parsed.game.teams
@@ -3722,11 +3848,33 @@ const app = {
             this.state.quizTitle = parsed.quizTitle || 'QuizWallah';
             // Quizdaten (Kategorien/Fragen) übernehmen, falls vorhanden
             if (Array.isArray(parsedCategories)) {
-                this.state.editor.categories = parsedCategories;
+                try {
+                    const normalized = this.normalizeImportedQuiz(
+                        {
+                            quizTitle: parsed.quizTitle || this.state.quizTitle,
+                            categories: parsedCategories
+                        },
+                        { showLatexLog: false }
+                    );
+
+                    const normalizedCategories = normalized.categories;
+                    this.state.editor.categories = normalizedCategories;
+
+                    if (JSON.stringify(parsedCategories) !== JSON.stringify(normalizedCategories)) {
+                        shouldPersistNormalizedData = true;
+                    }
+                } catch {
+                    // Fallback: Falls eine Altstruktur nicht normalisierbar ist, Originaldaten weiterverwenden.
+                    this.state.editor.categories = parsedCategories;
+                }
             }
             // Nach dem Laden alles neu rendern
             this.renderQuizBoard();
             this.updateRanking();
+
+            if (shouldPersistNormalizedData) {
+                this.saveGameState();
+            }
         }
 
         this.updateQuizInfo();

@@ -111,6 +111,7 @@ Im Ranking kann pro Team mit `✏️` die Karte `Punkte anpassen` geoeffnet werd
 - Import von JSON oder JSON-Codeblock
 - Strukturvalidierung + Normalisierung
 - Hinweisdialog bei potentiell destruktiven Ueberschreibungen
+- Reproduzierbarer LaTeX-Regressionsdatensatz in `latex-regression-quiz.json`
 
 ## Mobile/Responsive Verhalten
 
@@ -202,6 +203,7 @@ Die App speichert lokal im Browser (`localStorage`), u. a.:
 ├── script.js
 ├── default-quiz-data.js
 ├── sample-quiz.json
+├── latex-regression-quiz.json
 ├── manifest.webmanifest
 ├── sw.js
 ├── icons/
@@ -222,6 +224,7 @@ Die App speichert lokal im Browser (`localStorage`), u. a.:
 
 - Rein clientseitig, kein Backend erforderlich
 - Bei ungewoehnlichem Verhalten nach Updates: Seite 1-2x neu laden (Service-Worker-Cache)
+- Fuer LaTeX-/MathJax-Sonderfaelle kann `latex-regression-quiz.json` direkt importiert werden.
 - KI-Daten werden nicht automatisch direkt aus der App an KI-Dienste gesendet; Prompt/Antwort laufen manuell
 
 ## Lizenz
@@ -230,12 +233,19 @@ Im Repository ist aktuell keine separate Lizenzdatei hinterlegt.
 
 ## Changelog
 
+### Version 2026.05.15 (V1 beta 12)
+- LaTeX-Import robuster normalisiert, auch bei uneinheitlichen KI-Antworten ohne durchgaengige `$...$`-Delimiter.
+- Mobile/desktop-unabhaengige Reparatur fuer chemische Formeln, Inline-Mathe und problematische Alt-Daten aus gespeicherten Quizstaenden verbessert.
+- Textuelle LaTeX-Diakritika wie `\v{c}` und `\'{c}` werden beim Import fuer Namen im Textkontext sauber in Unicode ueberfuehrt.
+- Regressionstest-Datei `latex-regression-quiz.json` fuer MathJax-/LaTeX-Sonderfaelle hinzugefuegt.
+- Cache-Versionen fuer Web-Assets und Service Worker aktualisiert, damit neue Import- und Rendering-Logik sicher ausgerollt wird.
+
 ### Version 2026.05.05 (V1 beta 10)
 - Stabiler KI-Import mit automatischer Reparatur.
 - Reparatur beschädigter LaTeX-Sequenzen beim Import und Laden von Quizdateien.
 - Durchgängige horizontale Zentrierung der Weiter-Schaltflächen auf Modal-Ebene, auch im Querformat.
 
-### 2026-04-24 (V1 beta 3)
+### Version 2026.04.24 (V1 beta 3)
 
 - MathJax/LaTeX-Rendering für mathematische und chemische Formeln in Fragen und Antworten vollständig integriert (inkl. dynamischer Modals, $...$-Syntax und \ce{...} für Chemie).
 - MathJax-Konfiguration für Dollarzeichen-Syntax und mhchem-Paket (chemische Notation) ergänzt und korrekt geladen.
@@ -245,7 +255,7 @@ Im Repository ist aktuell keine separate Lizenzdatei hinterlegt.
 - Team-Setup-UI: Chips, Abstand und Layout für die Auswahl der Teamanzahl verbessert.
 - Diverse kleinere UI/UX-Optimierungen und Bugfixes.
 
-### 2026-04-20
+### Version 2026.04.20
 
 - Splash-Screen-Ablauf angepasst:
   - Ladezeit von 5s auf 3s reduziert
@@ -259,7 +269,7 @@ Im Repository ist aktuell keine separate Lizenzdatei hinterlegt.
   - gesamte Gruppe horizontal zentriert
 - Hauptmenue-Untertitel auf `by Sigi Schulz` umgestellt und um den Inhalt aus `Versioninfo.txt` erweitert.
 
-### 2026-04-19
+### Version 2026.04.19
 
 - README komplett auf den aktuellen Stand gebracht (Version 0.9d, Features, Bedienung, Mobile, PWA).
 - Hilfe & Anleitung auf Akkordeon-Layout umgestellt und Inhalte aktualisiert.

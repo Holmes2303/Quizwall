@@ -1,0 +1,56 @@
+{
+  "version": "1.0",
+  "type": "quiz",
+  "timestamp": "2026-05-15T12:00:00.000Z",
+  "quizTitle": "LaTeX-Regressionstest",
+  "categories": [
+    {
+      "id": 0,
+      "name": "Chemie & Physik",
+      "questions": [
+        {
+          "id": "q-0-0",
+          "points": 100,
+          "question": "Welches Edelgas bildet unter extremem Druck mit Natrium die Verbindung \\ce{Na2X}, wobei X das gesuchte Element ist?",
+          "answer": "Helium"
+        },
+        {
+          "id": "q-0-1",
+          "points": 200,
+          "question": "Welche Säure hat einen \\mathrm{p}K_{\\mathrm{a}}-Wert von ca. -12 und ist damit ca. 10^{6} mal stärker als reine Schwefelsäure?",
+          "answer": "$Fluorsurfantimonsäure (\\ce{HSbF6})$"
+        },
+        {
+          "id": "q-0-2",
+          "points": 300,
+          "question": "Welches dimensionslose Maß beschreibt in der Strömungslehre das Verhältnis von Trägheits- zu Viskositätskräften?",
+          "answer": "Reynolds-Zahl (Re = \\frac{\\rho v L}{\\eta})"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "name": "Geowissen",
+      "questions": [
+        {
+          "id": "q-1-0",
+          "points": 100,
+          "question": "Wie nennt man die Grenze zwischen Erdkruste und Erdmantel?",
+          "answer": "Mohorovi{c}i\\'{c}-Diskontinuität (Moho)"
+        },
+        {
+          "id": "q-1-1",
+          "points": 200,
+          "question": "Welches Gas macht etwa 78\\,\\% der Erdatmosphäre aus?",
+          "answer": "$Stickstoff (\\ce{N2})$"
+        },
+        {
+          "id": "q-1-2",
+          "points": 300,
+          "question": "Welche fiktive Kraft wirkt in einem rotierenden Bezugssystem radial nach außen, formal beschrieben als F = m \\omega^2 r?",
+          "answer": "Zentrifugalkraft"
+        }
+      ]
+    }
+  ]
+}
