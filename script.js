@@ -75,14 +75,15 @@ const app = {
                 // Splitte an $...$
                 const parts = [];
                 let lastIndex = 0;
-                let regex = /\$(.+?)\$/g;
+                let regex = /\$(.+?)\$|(\\ce\{[^{}]+\})/g;
                 let match;
                 while ((match = regex.exec(text)) !== null) {
                     if (match.index > lastIndex) {
                         // Text vor $...$
                         parts.push({ type: 'text', value: text.slice(lastIndex, match.index) });
                     }
-                    parts.push({ type: 'latex', value: match[1] });
+                    const latexValue = typeof match[1] === 'string' ? match[1] : match[2];
+                    parts.push({ type: 'latex', value: latexValue });
                     lastIndex = regex.lastIndex;
                 }
                 if (lastIndex < text.length) {
@@ -121,14 +122,15 @@ const app = {
                 const safe = (text || '').replace(/\n/g, '<br>');
                 const parts = [];
                 let lastIndex = 0;
-                const regex = /\$(.+?)\$/g;
+                const regex = /\$(.+?)\$|(\\ce\{[^{}]+\})/g;
                 let match;
 
                 while ((match = regex.exec(safe)) !== null) {
                     if (match.index > lastIndex) {
                         parts.push({ type: 'text', value: safe.slice(lastIndex, match.index) });
                     }
-                    parts.push({ type: 'latex', value: match[1] });
+                    const latexValue = typeof match[1] === 'string' ? match[1] : match[2];
+                    parts.push({ type: 'latex', value: latexValue });
                     lastIndex = regex.lastIndex;
                 }
 
